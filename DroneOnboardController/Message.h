@@ -1,0 +1,13 @@
+//
+// Created by nickolay on 30.05.2020.
+//
+
+#ifndef DRONEONBOARDCONTROLLER_MESSAGE_H
+#define DRONEONBOARDCONTROLLER_MESSAGE_H
+
+#include "opencv2/core.hpp"
+
+enum Type { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY };
+
+
+#endif //DRONEONBOARDCONTROLLER_MESSAGE_H
