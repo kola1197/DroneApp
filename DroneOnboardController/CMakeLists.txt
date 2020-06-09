@@ -23,7 +23,12 @@ add_executable(DroneOnboardController
         main.cpp
         StatsServer.cpp
         StatsServer.h
-        )
+        CameraModule.cpp
+        CameraModule.h
+        DroneImage.cpp
+        DroneImage.h
+        ../Utils/MutexBool.cpp
+        ../Utils/MutexBool.h)
 
 
 if (OpenCV_LIBS)

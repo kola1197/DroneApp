@@ -96,28 +96,39 @@ void StatsServer::startServer(){
         while (true) {
             char buffer[1024] = {0};
             valread = read(new_socket, buffer, 1024);
-            //printf("Got message: %s""\n", buffer);
-            //sendChar("test2");
         }
     });
     thr.detach();
+    camModule.startThread();
     int testcounter = 0;
-    cv::VideoCapture camera(0);
-    cv::Mat frame;
-    cv::Mat out;
     while (!stopThread())
     {
+        std::cout<<"here"<<std::endl;
+        sendImage(camModule.leftImage.getImage(), true);
+        sendImage(camModule.rightImage.getImage(), false);
         testcounter++;
-        std::string s = std::to_string(testcounter);
-        camera >> frame;
-        cv::Mat grey;
-        cvtColor(frame, grey, CV_BGR2RGB);
-
-        //sendSystemMessage(s);
-        resize(grey, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
-        sendImage(out, true);
-//        usleep(40000);
+        std::cout<<"images sent "<<testcounter<<std::endl;
     }
+
+    //camModule->startThread();
+//    int testcounter = 0;
+//    cv::VideoCapture camera(0);
+//    cv::Mat frame;
+//    cv::Mat out;
+//    while (!stopThread())
+//    {
+//        testcounter++;
+//        std::string s = std::to_string(testcounter);
+//        camera >> frame;
+//        cv::Mat grey;
+//        cvtColor(frame, grey, CV_BGR2RGB);
+//
+//        //sendSystemMessage(s);
+//        resize(grey, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
+//        sendImage(out, true);
+//        usleep(40000);
+//    }
+
 }
 
 
@@ -125,6 +136,45 @@ void StatsServer::startServer(){
 bool StatsServer::stopThread()
 {
     return stopBool;
+}
+
+void StatsServer::sendImage(std::shared_ptr<cv::Mat> image, bool left)
+{
+    Message m;
+    counter++;
+    //std::cout<<"frame№"<<counter<<std::endl;
+    m.height = image->size().height;
+    m.width = image->size().width;
+    m.dataSize = image->total()*image->elemSize();
+    //std::cout<<"size"<<m.dataSize<<std::endl;
+    std::string text = "";
+    if (left)
+    {
+        text = "left image";
+        m.type = Type::LEFT_IMAGE;
+        cv::Mat lll(image->size(), CV_8UC3, image->data);
+        //cv::imwrite("/home/nickolay/Code/DroneApp/LEFTPTR.jpg",*image.get());
+        //cv::imwrite("/home/nickolay/Code/DroneApp/LEFT.jpg",lll);
+        cv::imshow( "left", lll);
+    } else{
+        text = "right image";
+        m.type = Type::RIGHT_IMAGE;
+        cv::Mat lll(image->size(), CV_8UC3, image->data);
+        cv::imshow( "right", lll);
+    }
+    for (int i=0;i<200;i++)
+    {
+        m.text[i]='0';
+    }
+    for (int i=0;i<text.length();i++)
+    {
+        m.text[i]=text.at(i);
+    }
+    for (int i =0;i< m.dataSize;i++)
+    {
+        m.imData[i] = image->data[i];
+    }
+    send(new_socket, &m, sizeof(m), 0);
 }
 
 void StatsServer::sendImage(cv::Mat image, bool left)

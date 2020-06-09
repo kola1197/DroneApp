@@ -6,6 +6,7 @@
 #define DRONEONBOARDCONTROLLER_STATSSERVER_H
 
 #include "opencv2/core.hpp"
+#include "CameraModule.h"
 
 enum Type { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY };
 
@@ -31,6 +32,7 @@ public :
 
 
 private:
+    CameraModule camModule;
     bool stopBool = false;
     int server_fd, new_socket, valread;
     bool stopThread();
@@ -40,6 +42,8 @@ private:
     void sendImage(cv::Mat image, bool left);
 
     void sendMessage(Message *m);
+
+    void sendImage(std::shared_ptr<cv::Mat> image, bool left);
 };
 
 

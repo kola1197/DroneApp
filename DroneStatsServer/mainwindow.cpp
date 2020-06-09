@@ -11,6 +11,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     connect(&client,SIGNAL(transmit_to_gui(QString)),this,SLOT(setWarningText(QString)));
     connect(&client,SIGNAL(transmit_to_left_image(QImage)),this,SLOT(setLeftImage(QImage)));
+    connect(&client,SIGNAL(transmit_to_right_image(QImage)),this,SLOT(setRightImage(QImage)));
+
     std::thread thr([this]()
                     {
                         int cnt = 0;
@@ -22,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
                                 name+=QString::number(cnt);
                                 getLeftImage().save(name, "JPG");
                                 ui->leftImageLabel->setPixmap(QPixmap::fromImage(getLeftImage()));
+                                ui->rightImageLabel->setPixmap(QPixmap::fromImage(getRightImage()));
+
                             }
                             usleep(40000);
                         }

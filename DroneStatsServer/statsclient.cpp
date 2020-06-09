@@ -12,6 +12,8 @@
 #include <opencv/cv.hpp>
 #include <QtGui/QImage>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
 #define PORT 66666
 
 StatsClient::StatsClient():QObject()
@@ -61,7 +63,7 @@ void StatsClient::connectToDroneServer()
                 }
                 cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
                 QImage image = mat2RealQImage(img1);
-                counter++;
+                //counter++;
                 //std::cout<<"counter = "<<counter<<std::endl;
                 emit transmit_to_left_image(image);
                 //cv::imshow("Left image", img1);
@@ -75,8 +77,8 @@ void StatsClient::connectToDroneServer()
                 }
                 cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
                 QImage image = mat2RealQImage(img1);
+                //std::cout<<"right image"<<std::endl;
                 emit transmit_to_right_image(image);
-
                 //cv::imshow("Right image", img1);
             }
             if ( m.type == Type::SYSTEM_MESSAGE )
@@ -101,3 +103,5 @@ void StatsClient::sendData(char *data)
     send(sock , data , strlen(data) , 0 );
 }
 
+
+#pragma clang diagnostic pop
