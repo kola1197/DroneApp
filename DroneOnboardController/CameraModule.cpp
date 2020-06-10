@@ -64,14 +64,10 @@ void CameraModule::saveImages()
     std::string com0 = "mkdir -p " + path0;
     std::string com1 = "mkdir -p " + path1;
     std::cout<<com0<<std::endl;
-
-
+    
     system(com0.data());
     system(com1.data());
 
-//    mkdir(dirToSave.data(), NULL);
-//    mkdir(path0.data(), NULL);
-//    mkdir(path1.data(), NULL);
     path0 += "/" + std::to_string(saveCounter)+".jpg";
     path1 += "/" + std::to_string(saveCounter)+".jpg";
     cv::imwrite(path0,*leftImage.getImage());
