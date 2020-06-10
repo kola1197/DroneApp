@@ -9,7 +9,9 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <iostream>
+#include <sys/stat.h>
 #include "CameraModule.h"
+#include "stdio.h"
 
 void CameraModule::startThread() {
     if (testMode == 1) {
@@ -27,13 +29,14 @@ void CameraModule::startThread() {
                 leftCamera >> frame;
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
-                cv::imwrite("/home/nickolay/Code/DroneApp/OUT.jpg",out);
+                //cv::imwrite("/home/nickolay/Code/DroneApp/OUT.jpg",out);
                 leftImage.setImage(out.size(), out.data);
 
                 rightCamera >> frame;
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
                 rightImage.setImage(out.size(), out.data);
+                saveImages();
             }
         });
         thr.detach();
@@ -42,12 +45,46 @@ void CameraModule::startThread() {
 
 CameraModule::CameraModule()
 {
-
+    getDirectoryToSave();
 }
 
 CameraModule::~CameraModule()
 {
     stopThread();
+}
+
+void CameraModule::saveImages()
+{
+    std::string path0 = dirToSave + "/0";
+    std::string path1 = dirToSave + "/1";
+    path0.erase(std::remove(path0.begin(),path0.end(),' '),path0.end());
+    path1.erase(std::remove(path1.begin(),path1.end(),' '),path1.end());
+    path0.erase(std::remove(path0.begin(),path0.end(),'\n'),path0.end());
+    path1.erase(std::remove(path1.begin(),path1.end(),'\n'),path1.end());
+    std::string com0 = "mkdir -p " + path0;
+    std::string com1 = "mkdir -p " + path1;
+    std::cout<<com0<<std::endl;
+
+
+    system(com0.data());
+    system(com1.data());
+
+//    mkdir(dirToSave.data(), NULL);
+//    mkdir(path0.data(), NULL);
+//    mkdir(path1.data(), NULL);
+    path0 += "/" + std::to_string(saveCounter)+".jpg";
+    path1 += "/" + std::to_string(saveCounter)+".jpg";
+    cv::imwrite(path0,*leftImage.getImage());
+    cv::imwrite(path1,*rightImage.getImage());
+    std::cout<<path0<<std::endl;
+    saveCounter++;
+}
+
+void CameraModule::getDirectoryToSave()
+{
+    auto end = std::chrono::system_clock::now();
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+    dirToSave = std::ctime(&end_time);
 }
 
 void CameraModule::stopThread()

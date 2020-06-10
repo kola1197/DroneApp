@@ -24,6 +24,11 @@ public:
 private:
     MutexBool threadStop{false};
     int testMode = 1;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
+    void getDirectoryToSave();
+    std::string dirToSave = "";
+    int saveCounter=0;
+
+    void saveImages();
 };
 
 

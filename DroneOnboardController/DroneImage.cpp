@@ -37,7 +37,7 @@ void DroneImage::saveToTestDir()
 {
     //mutex.lock();
     std::cout<<"trying to save"<<std::endl;
-    cv::imwrite("/home/nickolay/Code/DroneApp/LEFT.jpg",*image.get());
+    //cv::imwrite("/home/nickolay/Code/DroneApp/LEFT.jpg",*image.get());
     std::cout<<"saved"<<std::endl;
     //mutex.unlock();
 }
