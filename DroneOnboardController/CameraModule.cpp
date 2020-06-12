@@ -42,6 +42,13 @@ void CameraModule::startThread() {
         });
         thr.detach();
     }
+    #ifdef __arm__
+    if (testMode == 0)
+    {
+        
+    }
+
+    #endif
 }
 
 CameraModule::CameraModule()
