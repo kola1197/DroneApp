@@ -46,7 +46,7 @@ void CameraModule::startThread() {
 
 CameraModule::CameraModule()
 {
-    getDirectoryToSave();
+    //getDirectoryToSave();
 }
 
 CameraModule::~CameraModule()
@@ -59,6 +59,8 @@ void CameraModule::setImageCaptureMode(bool mode)
     if (mode) {
         if (!imageCaptureMode.get())
         {
+            getDirectoryToSave();
+            saveCounter = 0;
             std::string path0 = dirToSave + "/0";
             std::string path1 = dirToSave + "/1";
             path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());

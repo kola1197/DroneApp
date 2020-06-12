@@ -85,7 +85,7 @@ void StatsServer::startServer(){
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    sendAllert("testtesttest");
+    //sendAllert("testtesttest");
     std::thread thr([this]()
     {
         std::cout<<"reading messages"<<std::endl;
@@ -200,6 +200,8 @@ bool StatsServer::stopThread()
 {
     return stopBool;
 }
+
+
 
 void StatsServer::sendAllert(std::string s)
 {

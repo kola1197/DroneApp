@@ -5,6 +5,7 @@
 #include <mutex>
 #include "QObject"
 #include "../Utils/Messages.h"
+#include "../Utils/MutexBool.h"
 
 /*
 enum Type { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY };
@@ -24,26 +25,31 @@ struct Message {
 class StatsClient : public QObject
 {
     Q_OBJECT
+
+
 public:
     StatsClient();
-    void connectToDroneServer();
+    void connectToDroneServer(std::string ip);
     void sendMessage(MessageWithImage m);
     void sendMessage(SystemMessage m);
+    MutexBool closeConnectionThreadBool{false};
 
 private:
     int sock = 0;
     QImage mat2RealQImage(const cv::Mat &src);
     int counter = 0;
-    bool connected = false;
     std::mutex sendMutex;
     void sendAllert(std::string s);
+    void errorServerStop();
 
+    //on true closes connection
 signals:
     void transmit_to_gui(QString value);
     void transmit_to_left_image(QImage value);
     void transmit_to_right_image(QImage value);
     void transmitOnboardVideoCaptureStatus(bool mode);
     void transmitVideoStreamStatus(bool mode);
+    void transmitConnectionStatus(bool connected);
 
 };
 

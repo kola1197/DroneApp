@@ -15,13 +15,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmit_to_right_image(QImage)),this,SLOT(setRightImage(QImage)));
     connect(&client,SIGNAL(transmitOnboardVideoCaptureStatus(bool)),this,SLOT(setOnboardVideoCaptureMode(bool)));
     connect(&client,SIGNAL(transmitVideoStreamStatus(bool)),this,SLOT(setVideoStreamMode(bool)));
+    connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
 
 
     std::thread thr([this]()
                     {
                         int cnt = 0;
                         while (true) {
-                            if (getConnected()) {
+                            if (!client.closeConnectionThreadBool.get()) {
                                 cnt++;
                                 //std::cout << "image updated "<<cnt<<std::endl;
                                 QString name = "im";
@@ -52,11 +53,11 @@ void MainWindow::setTestImage()
 
 void MainWindow::on_connectButton_released()
 {
-    client.connectToDroneServer();
-    setConnected(true);
+
+    client.connectToDroneServer(ui->ipEdit->text().toStdString());
+    //setConnected(true);
     ui->getImageStreamButton->setEnabled(true);
     ui->onBoardVideoCapture->setEnabled(true);
-
 }
 
 void MainWindow::setWarningText(QString text)
@@ -67,19 +68,21 @@ void MainWindow::setWarningText(QString text)
 void MainWindow::setLeftImage(QImage value)
 {
     imageMutex.lock();
-    imageSendMode = 1;
     leftImage = value.scaled(320,240);
-    //ui->leftImageLabel->setPixmap(QPixmap::fromImage(value));
     imageMutex.unlock();
+}
+
+void MainWindow::setConnected(bool b)
+{
+    ui->connectButton->setEnabled(!b);
+    ui->ipEdit->setEnabled(!b);
 }
 
 void MainWindow::setRightImage(QImage value)
 {
     imageMutex.lock();
-    imageSendMode = 1;
     rightImage = value.scaled(320,240);
     imageMutex.unlock();
-    //ui->leftImageLabel->setPixmap(QPixmap::fromImage(value));
 }
 
 QImage MainWindow::getLeftImage()
@@ -99,22 +102,6 @@ QImage MainWindow::getRightImage()
     QImage result(rightImage);
     //ui->leftImageLabel->setPixmap(QPixmap::fromImage(value));
     imageMutex.unlock();
-    return result;
-}
-
-void MainWindow::setConnected(bool conn)
-{
-    connectedMutex.lock();
-    connected = conn;
-    connectedMutex.unlock();
-}
-
-bool MainWindow::getConnected()
-{
-    bool result;
-    connectedMutex.lock();
-    result = connected;
-    connectedMutex.unlock();
     return result;
 }
 

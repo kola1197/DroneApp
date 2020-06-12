@@ -25,11 +25,13 @@ public slots:
     void setRightImage(QImage value);
     void setOnboardVideoCaptureMode(bool mode);
     void setVideoStreamMode(bool mode);
+    void setConnected(bool connected);                   //on server tcp connection on/off changes
+
+
 private slots:
     void on_connectButton_released();
     void on_getImageStreamButton_pressed();
     void on_onBoardVideoCapture_released();
-
 
 private:
     Ui::MainWindow *ui;
@@ -39,12 +41,8 @@ private:
     MutexBool hasVideoStream{false};
     MutexBool onboardVideoRecordingMode{false};
 
-    std::mutex connectedMutex;
-    int imageSendMode = 0; //0- disable, 1 - enable
     std::mutex imageMutex;
-    bool connected = false;
-    void setConnected(bool conn);
-    bool getConnected();
+
 
     QImage getLeftImage();
     QImage getRightImage();

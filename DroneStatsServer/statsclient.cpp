@@ -21,7 +21,7 @@ StatsClient::StatsClient():QObject()
 
 }
 
-void StatsClient::connectToDroneServer()
+void StatsClient::connectToDroneServer(std::string ip)
 {
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
@@ -33,7 +33,7 @@ void StatsClient::connectToDroneServer()
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
+    if(inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr)<=0)
     {
        printf("\nInvalid address/ Address not supported \n");
     }
@@ -41,17 +41,21 @@ void StatsClient::connectToDroneServer()
     {
        printf("\nConnection Failed \n");
     }
+    emit transmitConnectionStatus(true);
+    closeConnectionThreadBool.set(false);
     //sendData("greetings");
     std::thread thr([this]()
     {
         std::cout<<"reading messages"<<std::endl;
-        while (true) {
+        while (!closeConnectionThreadBool.get()) {
             HarbingerMessage h;
             char hmsg[sizeof (h)];
             int hbytes;
             for (int i = 0; i < sizeof(h); i += hbytes) {
-                if ((hbytes = recv(sock, hmsg +i, sizeof(h)  - i, 0)) == -1)
+                if ((hbytes = recv(sock, hmsg +i, sizeof(h)  - i, 0)) == -1){
                     std::cout<<"error"<<std::endl;
+                    errorServerStop();
+                }
             }
             std::memcpy(&h,hmsg , sizeof(h));
             if (h.type == HarbingerMessage::MESSAGE_WITH_IMAGE)
@@ -60,8 +64,10 @@ void StatsClient::connectToDroneServer()
                 char msg[sizeof (m)];
                 int bytes;
                 for (int i = 0; i < sizeof(m); i += bytes) {
-                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
                         std::cout<<"error"<<std::endl;
+                        errorServerStop();
+                    }
                 }
                 std::memcpy(&m,msg , sizeof(m));
                 if ( m.type == MessageWithImage::LEFT_IMAGE)
@@ -96,8 +102,10 @@ void StatsClient::connectToDroneServer()
                 char msg[sizeof (m)];
                 int bytes;
                 for (int i = 0; i < sizeof(m); i += bytes) {
-                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
                         std::cout<<"error"<<std::endl;
+                        errorServerStop();
+                    }
                 }
                 std::memcpy(&m,msg , sizeof(m));
                 QString string ("");
@@ -124,7 +132,13 @@ void StatsClient::connectToDroneServer()
         }
     });
     thr.detach();
-    connected = true;
+}
+
+void StatsClient::errorServerStop()
+{
+    closeConnectionThreadBool.set(true);
+    transmitConnectionStatus(false);
+    emit transmit_to_gui("Connection error");
 }
 
 QImage StatsClient::mat2RealQImage(cv::Mat const &src)     // B<->R
