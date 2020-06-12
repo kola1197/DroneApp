@@ -22,7 +22,10 @@ void CameraModule::startThread() {
             //cv::VideoCapture rightCamera(0);
             cv::Mat frame;
             cv::Mat out;
-            //std::cout<<threadStop.get()<<" thread stop value"<<std::endl;
+            int64 lastSave = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            //std::chrono::milliseconds lastSave = duration_cast< std::chrono::milliseconds >(
+            //        std::chrono::system_clock::now().time_since_epoch()
+            //);            //std::cout<<threadStop.get()<<" thread stop value"<<std::endl;
             while (!threadStop.get()) {
                 leftCamera >> frame;
                 cv::cvtColor(frame, out, CV_BGR2RGB);
@@ -34,8 +37,17 @@ void CameraModule::startThread() {
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
                 rightImage.setImage(out.size(), out.data);
-                if (imageCaptureMode.get())
+                int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                //std::chrono::milliseconds now = duration_cast< std::chrono::milliseconds >(
+                //        std::chrono::system_clock::now().time_since_epoch());
+                //std::cout<<lastSave<<std::endl;
+                //std::cout<<now<<std::endl;
+                //int64 d = now - lastSave;
+                //bool b = d>30;
+                //std::cout<<d<<" diff, result is "<<b<<". Image capute mode is "<<imageCaptureMode.get()<<std::endl;
+                if (imageCaptureMode.get() && (now - lastSave) > 20 )
                 {
+                    lastSave = now;
                     saveImages();
                 }
             }
@@ -45,7 +57,7 @@ void CameraModule::startThread() {
     #ifdef __arm__
     if (testMode == 0)
     {
-        
+
     }
 
     #endif
