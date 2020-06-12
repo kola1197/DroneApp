@@ -19,7 +19,8 @@ ENDIF ()
 
 
 #TARGET_LINK_LIBRARIES( ${execName})
-add_executable(DroneOnboardController
+add_executable(
+        DroneOnboardController
         main.cpp
         StatsServer.cpp
         StatsServer.h
@@ -28,7 +29,10 @@ add_executable(DroneOnboardController
         DroneImage.cpp
         DroneImage.h
         ../Utils/MutexBool.cpp
-        ../Utils/MutexBool.h)
+        ../Utils/MutexBool.h
+        ../Utils/Messages.cpp
+        ../Utils/Messages.h
+)
 
 
 if (OpenCV_LIBS)

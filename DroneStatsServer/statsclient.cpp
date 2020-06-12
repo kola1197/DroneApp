@@ -46,62 +46,125 @@ void StatsClient::connectToDroneServer()
     {
         std::cout<<"reading messages"<<std::endl;
         while (true) {
-            Message m;
-            char msg[sizeof (m)];
-            int bytes;
-            for (int i = 0; i < sizeof(m); i += bytes) {
-                if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+            HarbingerMessage h;
+            char hmsg[sizeof (h)];
+            int hbytes;
+            for (int i = 0; i < sizeof(h); i += hbytes) {
+                if ((hbytes = recv(sock, hmsg +i, sizeof(h)  - i, 0)) == -1)
                     std::cout<<"error"<<std::endl;
             }
-            std::memcpy(&m,msg , sizeof(m));
-            if ( m.type == Type::LEFT_IMAGE )
+            std::memcpy(&h,hmsg , sizeof(h));
+            if (h.type == HarbingerMessage::MESSAGE_WITH_IMAGE)
             {
-                uchar imdata [m.dataSize];
-                for (int i = 0;i<m.dataSize;i++)
-                {
-                    imdata[i] = m.imData[i];
+                MessageWithImage m;
+                char msg[sizeof (m)];
+                int bytes;
+                for (int i = 0; i < sizeof(m); i += bytes) {
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+                        std::cout<<"error"<<std::endl;
                 }
-                cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
-                QImage image = mat2RealQImage(img1);
-                //counter++;
-                //std::cout<<"counter = "<<counter<<std::endl;
-                emit transmit_to_left_image(image);
-                //cv::imshow("Left image", img1);
-            }
-            if ( m.type == Type::RIGHT_IMAGE )
-            {
-                uchar imdata [m.dataSize];
-                for (int i = 0;i<m.dataSize;i++)
+                std::memcpy(&m,msg , sizeof(m));
+                if ( m.type == MessageWithImage::LEFT_IMAGE)
                 {
-                    imdata[i] = m.imData[i];
+                    uchar imdata [m.dataSize];
+                    for (int i = 0;i<m.dataSize;i++)
+                    {
+                        imdata[i] = m.imData[i];
+                    }
+                    cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
+                    QImage image = mat2RealQImage(img1);
+                    //counter++;
+                    //std::cout<<"counter = "<<counter<<std::endl;
+                    emit transmit_to_left_image(image);
+                    //cv::imshow("Left image", img1);
                 }
-                cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
-                QImage image = mat2RealQImage(img1);
-                //std::cout<<"right image"<<std::endl;
-                emit transmit_to_right_image(image);
-                //cv::imshow("Right image", img1);
+                if ( m.type == MessageWithImage::RIGHT_IMAGE )
+                {
+                    uchar imdata [m.dataSize];
+                    for (int i = 0;i<m.dataSize;i++)
+                    {
+                        imdata[i] = m.imData[i];
+                    }
+                    cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
+                    QImage image = mat2RealQImage(img1);
+                    emit transmit_to_right_image(image);
+                }
             }
-            if ( m.type == Type::SYSTEM_MESSAGE )
+            if (h.type == HarbingerMessage::SYSTEM_MESSAGE)
             {
-                QString string (m.text);
-                emit transmit_to_gui(string);
+                SystemMessage m;
+                char msg[sizeof (m)];
+                int bytes;
+                for (int i = 0; i < sizeof(m); i += bytes) {
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+                        std::cout<<"error"<<std::endl;
+                }
+                std::memcpy(&m,msg , sizeof(m));
+                QString string ("");
+                bool b;
+                switch (m.type)
+                {
+                    case SystemMessage::TEXT_ALLERT:
+                        string =  m.text;
+                        emit transmit_to_gui(string);                                  //TODO change to "reactToSysCommand"
+                        break;
+                    case SystemMessage::VIDEO_STREAM_STATUS:
+                        std::cout<<"VIDEO_STREAM_STATUS"<<std::endl;
+                        b = m.i[0] == 1;
+                        emit transmitVideoStreamStatus(b);
+                        break;
+                    case SystemMessage::VIDEO_CAPTURE_STATUS:
+                        b = m.i[0] == 1;
+                        emit transmitOnboardVideoCaptureStatus(b);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     });
     thr.detach();
+    connected = true;
 }
 
 QImage StatsClient::mat2RealQImage(cv::Mat const &src)     // B<->R
 {
     QImage img = QImage((uchar*) src.data, src.cols, src.rows, src.step, QImage::Format_RGB888);
-    //QImage res = img.convertToFormat(QImage::Format_RGB32);
     return img.copy();
 }
 
-void StatsClient::sendData(char *data)
+
+
+void StatsClient::sendMessage(SystemMessage m)
 {
-    send(sock , data , strlen(data) , 0 );
+    HarbingerMessage h;
+    h.type = HarbingerMessage::SYSTEM_MESSAGE;
+    sendMutex.lock();
+    send(sock, &h, sizeof(h), 0);
+    send(sock, &m, sizeof(m), 0);
+    sendMutex.unlock();
 }
 
+void StatsClient::sendMessage(MessageWithImage m)
+{
+    HarbingerMessage h;
+    h.type = HarbingerMessage::MESSAGE_WITH_IMAGE;
+    sendMutex.lock();
+    send(sock, &h, sizeof(h), 0);
+    send(sock, &m, sizeof(m), 0);
+    sendMutex.unlock();
+}
 
-#pragma clang diagnostic pop
+void StatsClient::sendAllert(std::string s)
+{
+    SystemMessage m;
+    m.type = SystemMessage::TEXT_ALLERT;
+    const char* text = s.c_str();
+    if (s.length() < 200)                        //200 - m.text.size
+    {
+        for (int i=0;i<s.length();i++) {
+            m.text[i] = s[i];
+        }
+    }
+    sendMessage(m);
+}

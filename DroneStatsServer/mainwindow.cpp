@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "iostream"
+#include "../Utils/Messages.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -12,6 +13,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmit_to_gui(QString)),this,SLOT(setWarningText(QString)));
     connect(&client,SIGNAL(transmit_to_left_image(QImage)),this,SLOT(setLeftImage(QImage)));
     connect(&client,SIGNAL(transmit_to_right_image(QImage)),this,SLOT(setRightImage(QImage)));
+    connect(&client,SIGNAL(transmitOnboardVideoCaptureStatus(bool)),this,SLOT(setOnboardVideoCaptureMode(bool)));
+    connect(&client,SIGNAL(transmitVideoStreamStatus(bool)),this,SLOT(setVideoStreamMode(bool)));
+
 
     std::thread thr([this]()
                     {
@@ -19,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
                         while (true) {
                             if (getConnected()) {
                                 cnt++;
-                                std::cout << "image updated "<<cnt<<std::endl;
+                                //std::cout << "image updated "<<cnt<<std::endl;
                                 QString name = "im";
                                 name+=QString::number(cnt);
                                 getLeftImage().save(name, "JPG");
@@ -50,6 +54,9 @@ void MainWindow::on_connectButton_released()
 {
     client.connectToDroneServer();
     setConnected(true);
+    ui->getImageStreamButton->setEnabled(true);
+    ui->onBoardVideoCapture->setEnabled(true);
+
 }
 
 void MainWindow::setWarningText(QString text)
@@ -60,6 +67,7 @@ void MainWindow::setWarningText(QString text)
 void MainWindow::setLeftImage(QImage value)
 {
     imageMutex.lock();
+    imageSendMode = 1;
     leftImage = value.scaled(320,240);
     //ui->leftImageLabel->setPixmap(QPixmap::fromImage(value));
     imageMutex.unlock();
@@ -67,7 +75,10 @@ void MainWindow::setLeftImage(QImage value)
 
 void MainWindow::setRightImage(QImage value)
 {
+    imageMutex.lock();
+    imageSendMode = 1;
     rightImage = value.scaled(320,240);
+    imageMutex.unlock();
     //ui->leftImageLabel->setPixmap(QPixmap::fromImage(value));
 }
 
@@ -107,3 +118,53 @@ bool MainWindow::getConnected()
     return result;
 }
 
+
+void MainWindow::on_getImageStreamButton_pressed()
+{
+    if (!hasVideoStream.get()) {
+        SystemMessage m;
+        m.type = SystemMessage::START_VIDEO_STREAM;
+        client.sendMessage(m);
+    } else{
+        SystemMessage m;
+        m.type = SystemMessage::STOP_VIDEO_STREAM;
+        client.sendMessage(m);
+    }
+}
+
+void MainWindow::on_onBoardVideoCapture_released()
+{
+    if (!onboardVideoRecordingMode.get()){
+        SystemMessage m;
+        m.type = SystemMessage::START_IMAGE_CAPTURE;
+        client.sendMessage(m);
+    }
+    else{
+        SystemMessage m;
+        m.type = SystemMessage::STOP_IMAGE_CAPTURE;
+        client.sendMessage(m);
+    }
+}
+
+void MainWindow::setOnboardVideoCaptureMode(bool mode)
+{
+    onboardVideoRecordingMode.set(mode);
+    if (mode)
+    {
+        ui->onBoardVideoCapture->setText("Stop video record ");
+    } else{
+        ui->onBoardVideoCapture->setText("Record video on board ");
+    }
+}
+
+void MainWindow::setVideoStreamMode(bool mode)
+{
+    hasVideoStream.set(mode);
+    if (mode)
+    {
+        ui->getImageStreamButton->setText("Turn off video");
+    } else{
+        ui->getImageStreamButton->setText("Turn on video");
+    }
+
+}

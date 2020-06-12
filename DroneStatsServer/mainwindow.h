@@ -5,6 +5,7 @@
 
 #include <QMainWindow>
 #include <mutex>
+#include "../Utils/MutexBool.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,9 +23,12 @@ public slots:
     void setWarningText(QString text);
     void setLeftImage(QImage value);
     void setRightImage(QImage value);
-
+    void setOnboardVideoCaptureMode(bool mode);
+    void setVideoStreamMode(bool mode);
 private slots:
     void on_connectButton_released();
+    void on_getImageStreamButton_pressed();
+    void on_onBoardVideoCapture_released();
 
 
 private:
@@ -32,9 +36,11 @@ private:
     StatsClient client;
     QImage leftImage;
     QImage rightImage;
+    MutexBool hasVideoStream{false};
+    MutexBool onboardVideoRecordingMode{false};
 
     std::mutex connectedMutex;
-
+    int imageSendMode = 0; //0- disable, 1 - enable
     std::mutex imageMutex;
     bool connected = false;
     void setConnected(bool conn);

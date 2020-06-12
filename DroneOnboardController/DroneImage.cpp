@@ -29,17 +29,17 @@ void DroneImage::setImage(cv::Size size, uchar* dataArray)
     data = cv::Mat(size, CV_8UC3, dataArray);
     data = data.clone();
     image = std::shared_ptr<cv::Mat>(new cv::Mat(data));
-    saveToTestDir();
+    //saveToTestDir();
     mutex.unlock();
 }
 
 void DroneImage::saveToTestDir()
 {
-    //mutex.lock();
+    mutex.lock();
     std::cout<<"trying to save"<<std::endl;
-    //cv::imwrite("/home/nickolay/Code/DroneApp/LEFT.jpg",*image.get());
+    cv::imwrite("/home/nickolay/Code/DroneApp/LEFT.jpg",*image.get());
     std::cout<<"saved"<<std::endl;
-    //mutex.unlock();
+    mutex.unlock();
 }
 
  std::shared_ptr<cv::Mat> DroneImage::getImage()

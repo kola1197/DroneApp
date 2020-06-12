@@ -49,6 +49,8 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     statsclient.h
     ../Utils/MutexBool.cpp
     ../Utils/MutexBool.h
+    ../Utils/Messages.cpp
+    ../Utils/Messages.h
   )
 
 

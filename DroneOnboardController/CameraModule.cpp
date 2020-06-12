@@ -16,15 +16,13 @@
 void CameraModule::startThread() {
     if (testMode == 1) {
         std::thread thr([this]() {
-            std::cout<<"here 010"<<std::endl;
             cv::VideoCapture leftCamera("/dev/video2");
-            std::cout<<"here 020"<<std::endl;
             cv::VideoCapture rightCamera("/dev/video0");
 
             //cv::VideoCapture rightCamera(0);
             cv::Mat frame;
             cv::Mat out;
-            std::cout<<threadStop.get()<<" thread stop value"<<std::endl;
+            //std::cout<<threadStop.get()<<" thread stop value"<<std::endl;
             while (!threadStop.get()) {
                 leftCamera >> frame;
                 cv::cvtColor(frame, out, CV_BGR2RGB);
@@ -36,7 +34,10 @@ void CameraModule::startThread() {
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
                 rightImage.setImage(out.size(), out.data);
-                saveImages();
+                if (imageCaptureMode.get())
+                {
+                    saveImages();
+                }
             }
         });
         thr.detach();
@@ -53,21 +54,38 @@ CameraModule::~CameraModule()
     stopThread();
 }
 
+void CameraModule::setImageCaptureMode(bool mode)
+{
+    if (mode) {
+        if (!imageCaptureMode.get())
+        {
+            std::string path0 = dirToSave + "/0";
+            std::string path1 = dirToSave + "/1";
+            path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());
+            path1.erase(std::remove(path1.begin(), path1.end(), ' '), path1.end());
+            path0.erase(std::remove(path0.begin(), path0.end(), '\n'), path0.end());
+            path1.erase(std::remove(path1.begin(), path1.end(), '\n'), path1.end());
+            std::string com0 = "mkdir -p " + path0;
+            std::string com1 = "mkdir -p " + path1;
+            system(com0.data());
+            system(com1.data());
+        }
+        imageCaptureMode.set(mode);
+    }
+    else{
+        imageCaptureMode.set(mode);
+    }
+}
+
 void CameraModule::saveImages()
 {
+
     std::string path0 = dirToSave + "/0";
     std::string path1 = dirToSave + "/1";
     path0.erase(std::remove(path0.begin(),path0.end(),' '),path0.end());
     path1.erase(std::remove(path1.begin(),path1.end(),' '),path1.end());
     path0.erase(std::remove(path0.begin(),path0.end(),'\n'),path0.end());
     path1.erase(std::remove(path1.begin(),path1.end(),'\n'),path1.end());
-    std::string com0 = "mkdir -p " + path0;
-    std::string com1 = "mkdir -p " + path1;
-    std::cout<<com0<<std::endl;
-    
-    system(com0.data());
-    system(com1.data());
-
     path0 += "/" + std::to_string(saveCounter)+".jpg";
     path1 += "/" + std::to_string(saveCounter)+".jpg";
     cv::imwrite(path0,*leftImage.getImage());
