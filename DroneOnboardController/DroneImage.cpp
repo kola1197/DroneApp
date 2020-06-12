@@ -11,7 +11,7 @@
 DroneImage::DroneImage()
 {
 
-    data = cv::imread("/home/nickolay/DroneStatsServer/testim.jpg", CV_LOAD_IMAGE_COLOR);
+    data = cv::imread("../../testim.jpg", CV_LOAD_IMAGE_COLOR);
     cv::resize(data, data, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
     setImage(data.size(),data.data);
 }
@@ -37,7 +37,7 @@ void DroneImage::saveToTestDir()
 {
     mutex.lock();
     std::cout<<"trying to save"<<std::endl;
-    cv::imwrite("/home/nickolay/Code/DroneApp/LEFT.jpg",*image.get());
+    cv::imwrite("../../testOut.jpg",*image.get());
     std::cout<<"saved"<<std::endl;
     mutex.unlock();
 }

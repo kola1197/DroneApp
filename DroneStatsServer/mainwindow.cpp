@@ -45,7 +45,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::setTestImage()
 {
-    QPixmap pic("/home/nickolay/DroneStatsServer/testim.jpg");
+    //QPixmap pic("/home/nickolay/DroneStatsServer/testim.jpg");
+    QPixmap pic("../../testim.jpg");
     pic = pic.scaled(320,240);
     ui->leftImageLabel->setPixmap(pic);
     ui->rightImageLabel->setPixmap(pic);
