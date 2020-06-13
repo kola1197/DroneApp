@@ -1,3 +1,0 @@
-/home/pi/Code/DroneApp/DroneOnboardController/build/CMakeFiles/rebuild_cache.dir
-/home/pi/Code/DroneApp/DroneOnboardController/build/CMakeFiles/DroneOnboardController.dir
-/home/pi/Code/DroneApp/DroneOnboardController/build/CMakeFiles/edit_cache.dir
