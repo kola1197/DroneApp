@@ -166,16 +166,17 @@ int CameraModule::startThread() {
                     imshow(string("disparity_")+char('0'+sensor_id), disp8);
                     printf("Disparity at point (%d,%d) is %f pixels!\n", HEIGHT/2, WIDTH/2,  float(g_disparity.at<short>( HEIGHT/2,WIDTH/2))/16);
                 }*/
-                //cv::imwrite("testLeftGREYOut.jpg",g_greyscale_image_left);
+                
                 //cv::cvtColor(g_greyscale_image_left, out, CV_BGR2RGB);
-                cv::cvtColor(g_greyscale_image_left, out, CV_GRAY2RGB);
-                //std::cout<<"cvtColor left"<<std::endl;
-                leftImage.setImage(out.size(), out.data);
-                //std::cout<<"setImage left"<<std::endl;
+                //cv::cvtColor(g_greyscale_image_left, out, CV_GRAY2RGB);
+                g_greyscale_image_left.copyTo(out);
+                leftImage.setGrayImage(out.size(), out.data);
+                
                 //cv::cvtColor(g_greyscale_image_right, out, CV_BGR2RGB);
-                cv::cvtColor(g_greyscale_image_right, out, CV_GRAY2RGB);
+                //cv::cvtColor(g_greyscale_image_right, out, CV_GRAY2RGB);
+                g_greyscale_image_right.copyTo(out);
                 //std::cout<<"cvtColor right"<<std::endl;
-                rightImage.setImage(out.size(), out.data);
+                rightImage.setGrayImage(out.size(), out.data);
                 //std::cout<<"setImage right"<<std::endl;
                 int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 if (imageCaptureMode.get() && (now - lastSave) > 20 )

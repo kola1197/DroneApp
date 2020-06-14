@@ -16,6 +16,8 @@ public:
     std::shared_ptr<cv::Mat> getImage();
     void setImage(std::shared_ptr<cv::Mat> im);
     void setImage(cv::Size size, uchar* data);
+    void setGrayImage(std::shared_ptr<cv::Mat> im);
+    void setGrayImage(cv::Size size, uchar* data);
 
 private:
     std::shared_ptr<cv::Mat> image;

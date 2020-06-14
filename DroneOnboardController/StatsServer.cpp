@@ -329,7 +329,7 @@ void StatsServer::sendMessage(MessageWithImage m)
 void StatsServer::sendMessage(MessageWithGrayImage m)
 {
     HarbingerMessage h;
-    h.type = HarbingerMessage::MESSAGE_WITH_IMAGE;
+    h.type = HarbingerMessage::MESSAGE_WITH_GRAY_IMAGE;
     h.code = 239;
     sendMutex.lock();
     send(sock, &h, sizeof(h), 0);

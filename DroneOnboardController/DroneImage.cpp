@@ -28,6 +28,13 @@ void DroneImage::setImage(std::shared_ptr<cv::Mat> im)
        mutex.unlock();
 }
 
+void DroneImage::setGrayImage(std::shared_ptr<cv::Mat> im)
+{
+       mutex.lock();
+       image = std::shared_ptr<cv::Mat>(new cv::Mat( im->size(), CV_8UC1, im->data));
+       mutex.unlock();
+}
+
 void DroneImage::setImage(cv::Size size, uchar* dataArray)
 {
     //std::cout<<"here5"<<dataArray<<"www"<<std::endl;
@@ -40,6 +47,18 @@ void DroneImage::setImage(cv::Size size, uchar* dataArray)
     //std::cout<<"here7.5"<<std::endl;
     data = d.clone();
     //std::cout<<"here8"<<std::endl;
+    image = std::shared_ptr<cv::Mat>(new cv::Mat(data));
+    //saveToTestDir();
+    mutex.unlock();
+}
+
+void DroneImage::setGrayImage(cv::Size size, uchar* dataArray)
+{
+    mutex.lock();
+    cv::Mat d  = cv::Mat(size, CV_8UC1, dataArray);
+    //cv::imwrite("testOut.jpg",data);
+    //cv::Mat d = data.clone();
+    data = d.clone();
     image = std::shared_ptr<cv::Mat>(new cv::Mat(data));
     //saveToTestDir();
     mutex.unlock();
