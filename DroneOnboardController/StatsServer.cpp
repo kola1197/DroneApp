@@ -15,6 +15,8 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <bits/fcntl-linux.h>
+#include <fcntl.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -207,6 +209,19 @@ bool StatsServer::stopThread()
     return stopBool;
 }
 
+int StatsServer::GetCPULoad() {
+    int FileHandler;
+    char FileBuffer[1024];
+    float load;
+
+    FileHandler = open("/proc/loadavg", O_RDONLY);
+    if(FileHandler < 0) {
+        return -1; }
+    read(FileHandler, FileBuffer, sizeof(FileBuffer) - 1);
+    sscanf(FileBuffer, "%f", &load);
+    close(FileHandler);
+    return (int)(load * 100);
+}
 
 
 void StatsServer::sendAllert(std::string s)

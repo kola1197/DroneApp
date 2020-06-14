@@ -17,17 +17,18 @@ IF ( USE_OPENCV )
     endif()
 ENDIF ()
 
-include_directories($(SOURCE_DIR)/../../../include)
+#include_directories($(SOURCE_DIR)/../../../include)
 
 #if(WIN32)
 #	find_library(Guidance_Lib DJI_guidance.lib HINTS $(SOURCE_DIR)/../../../../lib/2013/x86)
 #else()
-	find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
 #	target_link_libraries( dji_guidance_usb pthread usb-1.0)
 #endif()
 
 #TARGET_LINK_LIBRARIES( ${execName})
-add_executable(
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+    message("-- ARM architecture detected")
+    add_executable(
         DroneOnboardController
         main.cpp
         StatsServer.cpp
@@ -42,9 +43,25 @@ add_executable(
         ../Utils/MutexBool.cpp
         ../Utils/MutexBool.h
         ../Utils/Messages.cpp
-        ../Utils/Messages.h
-)
-
-target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
+        ../Utils/Messages.h)
+    find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
+    target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
+ELSE()
+    message("-- x64 architecture detected")
+    add_executable(
+        DroneOnboardController
+        main.cpp
+        StatsServer.cpp
+        StatsServer.h
+        CameraModule.cpp
+        CameraModule.h
+        DroneImage.cpp
+        DroneImage.h
+        ../Utils/MutexBool.cpp
+        ../Utils/MutexBool.h
+        ../Utils/Messages.cpp
+        ../Utils/Messages.h)
+    target_link_libraries(DroneOnboardController ${OpenCV_LIBS} usb-1.0 pthread)
+ENDIF()
 target_include_directories(DroneOnboardController PUBLIC Utils)
 

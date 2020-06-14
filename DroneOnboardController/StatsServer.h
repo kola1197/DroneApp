@@ -42,10 +42,9 @@ private:
     void sendMessage(SystemMessage m);
     std::mutex sendMutex;
     void sendImage(std::shared_ptr<cv::Mat> image, bool left);
-
     void sendMessage(MessageWithImage m);
-
     void sendAllert(std::string);
+    int GetCPULoad();
 };
 
 
