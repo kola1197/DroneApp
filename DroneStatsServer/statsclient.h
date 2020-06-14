@@ -36,7 +36,7 @@ public:
 
 private:
     int sock = 0;
-    QImage mat2RealQImage(const cv::Mat &src);
+    QImage mat2RealQImage(cv::Mat const &src, bool isGray);
     int counter = 0;
     std::mutex sendMutex;
     void sendAllert(std::string s);

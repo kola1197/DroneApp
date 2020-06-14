@@ -79,7 +79,7 @@ void StatsClient::connectToDroneServer(std::string ip)
                     }
                     cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
                     //cv::imwrite("../TESTGREY.jpg",img1);
-                    QImage image = mat2RealQImage(img1);
+                    QImage image = mat2RealQImage(img1, false);
                     //counter++;
                     //std::cout<<"counter = "<<counter<<std::endl;
                     emit transmit_to_left_image(image);
@@ -93,7 +93,46 @@ void StatsClient::connectToDroneServer(std::string ip)
                         imdata[i] = m.imData[i];
                     }
                     cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
-                    QImage image = mat2RealQImage(img1);
+                    QImage image = mat2RealQImage(img1, false);
+                    emit transmit_to_right_image(image);
+                }
+            }
+            if (h.type == HarbingerMessage::MESSAGE_WITH_GRAY_IMAGE)
+            {
+                MessageWithImage m;
+                char msg[sizeof (m)];
+                int bytes;
+                for (int i = 0; i < sizeof(m); i += bytes) {
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
+                        std::cout<<"error"<<std::endl;
+                        errorServerStop();
+                    }
+                }
+                std::memcpy(&m,msg , sizeof(m));
+                if ( m.type == MessageWithImage::LEFT_IMAGE)
+                {
+                    uchar imdata [m.dataSize];
+                    for (int i = 0;i<m.dataSize;i++)
+                    {
+                        imdata[i] = m.imData[i];
+                    }
+                    cv::Mat img1(cv::Size(m.width, m.height), CV_8UC1, imdata);
+                    //cv::imwrite("../TESTGREY.jpg",img1);
+                    QImage image = mat2RealQImage(img1, true);
+                    //counter++;
+                    //std::cout<<"counter = "<<counter<<std::endl;
+                    emit transmit_to_left_image(image);
+                    //cv::imshow("Left image", img1);
+                }
+                if ( m.type == MessageWithImage::RIGHT_IMAGE )
+                {
+                    uchar imdata [m.dataSize];
+                    for (int i = 0;i<m.dataSize;i++)
+                    {
+                        imdata[i] = m.imData[i];
+                    }
+                    cv::Mat img1(cv::Size(m.width, m.height), CV_8UC1, imdata);
+                    QImage image = mat2RealQImage(img1, true);
                     emit transmit_to_right_image(image);
                 }
             }
@@ -142,9 +181,14 @@ void StatsClient::errorServerStop()
     emit transmit_to_gui("Connection error");
 }
 
-QImage StatsClient::mat2RealQImage(cv::Mat const &src)     // B<->R
+QImage StatsClient::mat2RealQImage(cv::Mat const &src, bool isGray)     // B<->R
 {
-    QImage img = QImage((uchar*) src.data, src.cols, src.rows, src.step, QImage::Format_RGB888);
+    QImage img;
+    if (isGray) {
+        img = QImage((uchar *) src.data, src.cols, src.rows, src.step, QImage::Format_Grayscale8);
+    } else {
+        img = QImage((uchar *) src.data, src.cols, src.rows, src.step, QImage::Format_RGB888);
+    }
     return img.copy();
 }
 
