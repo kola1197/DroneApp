@@ -61,7 +61,7 @@ ELSE()
         ../Utils/MutexBool.h
         ../Utils/Messages.cpp
         ../Utils/Messages.h)
-    target_link_libraries(DroneOnboardController ${OpenCV_LIBS} usb-1.0 pthread)
+    target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()
 target_include_directories(DroneOnboardController PUBLIC Utils)
 

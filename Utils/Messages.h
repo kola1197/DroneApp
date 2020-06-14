@@ -11,7 +11,7 @@
 //enum Type { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY, SET_IMAGE_SEND_MODE };
 
 struct HarbingerMessage {                                           //sends before other messages, to set resiver to it
-    enum Type {TEST_MESSAGE, MESSAGE_WITH_IMAGE, SYSTEM_MESSAGE};
+    enum Type {TEST_MESSAGE, MESSAGE_WITH_IMAGE, MESSAGE_WITH_GRAY_IMAGE, SYSTEM_MESSAGE};
     Type type;
     int code;
 };
@@ -25,6 +25,18 @@ struct MessageWithImage {                                           //get image 
     int dataSize;
     //cv::Mat image;
     uchar imData [240400];                                                  //230400   //2352000
+    Type type;
+};
+
+struct MessageWithGrayImage {                                           //get image from vehicle
+    enum Type {LEFT_IMAGE, RIGHT_IMAGE};
+    char text[200];
+    int i;
+    int height;
+    int width;
+    int dataSize;
+    //cv::Mat image;
+    uchar imData [100000];                                               //100000   //230400   //2352000
     Type type;
 };
 

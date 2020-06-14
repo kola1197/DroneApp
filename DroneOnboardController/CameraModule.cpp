@@ -12,19 +12,19 @@
 #include <sys/stat.h>
 #include "CameraModule.h"
 #include "stdio.h"
-#include "DJI_guidance.h"
-#include "DJI_utility.h"
-   
+
+#ifdef __arm__
 e_vbus_index CameraModule::sensor_id = e_vbus4;
 cv::Mat CameraModule::g_greyscale_image_left = cv::Mat::zeros(240,320,CV_8UC1);
 cv::Mat	CameraModule::g_greyscale_image_right = cv::Mat::zeros(240,320,CV_8UC1);
 DJI_lock  CameraModule::g_lock;
 DJI_event CameraModule::g_event;
+#endif
 
-
-void CameraModule::startThread() {
+int CameraModule::startThread() {
+    int result = 0;
     std::cout<<"starting thread"<<std::endl;
-    if (testMode == 1) {
+    if (testMode == 1) {                                                                   //TODO: add check of video0/video2 exist
         std::thread thr([this]() {
             cv::VideoCapture leftCamera("/dev/video2");
             cv::VideoCapture rightCamera("/dev/video0");
@@ -188,10 +188,17 @@ void CameraModule::startThread() {
         thr.detach();
 
     }
-
+    #else
+    if (testMode == 0)
+    {
+        //testMode = 1;
+        result = 1;
+    }
     #endif
+    return result;                                  // 0 - ok, 1 - this testMode can not be set
 }
 
+#ifdef __arm__
 int CameraModule::my_callback(int data_type, int data_len, char *content)
 {
 	g_lock.enter();
@@ -219,6 +226,15 @@ int CameraModule::my_callback(int data_type, int data_len, char *content)
 	g_event.set_event();
 
 	return 0;
+}
+
+#endif
+
+int CameraModule::setTestMode(int i)
+{
+    threadStop.set(true);
+    testMode = i;
+    return startThread();
 }
 
 CameraModule::CameraModule()

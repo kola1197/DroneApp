@@ -12,7 +12,7 @@
 DroneImage::DroneImage()
 {
 
-    data = cv::imread("../testim.jpg", CV_LOAD_IMAGE_COLOR);
+    data = cv::imread("../../testim.jpg", CV_LOAD_IMAGE_COLOR);
     //cv::waitKey(5000);
     //std::cout<<data.data<<std::endl;
     cv::resize(data, data, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);

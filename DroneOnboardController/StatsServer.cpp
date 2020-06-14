@@ -15,7 +15,6 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <bits/fcntl-linux.h>
 #include <fcntl.h>
 
 #pragma clang diagnostic push
@@ -222,7 +221,6 @@ int StatsServer::GetCPULoad() {
     close(FileHandler);
     return (int)(load * 100);
 }
-
 
 void StatsServer::sendAllert(std::string s)
 {
