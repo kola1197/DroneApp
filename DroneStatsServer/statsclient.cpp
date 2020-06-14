@@ -99,7 +99,7 @@ void StatsClient::connectToDroneServer(std::string ip)
             }
             if (h.type == HarbingerMessage::MESSAGE_WITH_GRAY_IMAGE)
             {
-                MessageWithImage m;
+                MessageWithGrayImage m;
                 char msg[sizeof (m)];
                 int bytes;
                 for (int i = 0; i < sizeof(m); i += bytes) {
@@ -117,7 +117,8 @@ void StatsClient::connectToDroneServer(std::string ip)
                         imdata[i] = m.imData[i];
                     }
                     cv::Mat img1(cv::Size(m.width, m.height), CV_8UC1, imdata);
-                    //cv::imwrite("../TESTGREY.jpg",img1);
+                    std::cout<<"GOT CREY"<<std::endl;
+                    cv::imwrite("../TESTGREY.jpg",img1);
                     QImage image = mat2RealQImage(img1, true);
                     //counter++;
                     //std::cout<<"counter = "<<counter<<std::endl;
