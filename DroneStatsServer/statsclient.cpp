@@ -78,6 +78,7 @@ void StatsClient::connectToDroneServer(std::string ip)
                         imdata[i] = m.imData[i];
                     }
                     cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
+                    cv::imwrite("../TESTGREY.jpg",img1);
                     QImage image = mat2RealQImage(img1);
                     //counter++;
                     //std::cout<<"counter = "<<counter<<std::endl;

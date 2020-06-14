@@ -25,9 +25,9 @@ MainWindow::MainWindow(QWidget *parent)
                             if (!client.closeConnectionThreadBool.get()) {
                                 cnt++;
                                 //std::cout << "image updated "<<cnt<<std::endl;
-                                QString name = "im";
-                                name+=QString::number(cnt);
-                                getLeftImage().save(name, "JPG");
+                                //QString name = "im";
+                                //name+=QString::number(cnt);
+                                //getLeftImage().save(name, "JPG");
                                 ui->leftImageLabel->setPixmap(QPixmap::fromImage(getLeftImage()));
                                 ui->rightImageLabel->setPixmap(QPixmap::fromImage(getRightImage()));
 

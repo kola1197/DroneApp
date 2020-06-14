@@ -7,12 +7,17 @@
 #include <iostream>
 #include <opencv2/imgproc.hpp>
 #include "DroneImage.h"
+#include "opencv2/highgui.hpp"
 
 DroneImage::DroneImage()
 {
 
-    data = cv::imread("../../testim.jpg", CV_LOAD_IMAGE_COLOR);
+    data = cv::imread("../testim.jpg", CV_LOAD_IMAGE_COLOR);
+    //cv::waitKey(5000);
+    //std::cout<<data.data<<std::endl;
     cv::resize(data, data, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
+    //std::cout<<"here4"<<data.data<<"www"<<std::endl;
+    //cv::imwrite("../estOut.jpg",data);
     setImage(data.size(),data.data);
 }
 
@@ -25,9 +30,16 @@ void DroneImage::setImage(std::shared_ptr<cv::Mat> im)
 
 void DroneImage::setImage(cv::Size size, uchar* dataArray)
 {
+    //std::cout<<"here5"<<dataArray<<"www"<<std::endl;
     mutex.lock();
-    data = cv::Mat(size, CV_8UC3, dataArray);
-    data = data.clone();
+    //std::cout<<"here6"<<std::endl;
+    cv::Mat d  = cv::Mat(size, CV_8UC3, dataArray);
+    //cv::imwrite("testOut.jpg",data);
+    //std::cout<<"here7"<<std::endl;
+    //cv::Mat d = data.clone();
+    //std::cout<<"here7.5"<<std::endl;
+    data = d.clone();
+    //std::cout<<"here8"<<std::endl;
     image = std::shared_ptr<cv::Mat>(new cv::Mat(data));
     //saveToTestDir();
     mutex.unlock();

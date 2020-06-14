@@ -11,7 +11,12 @@
 #include <unistd.h>    // close()
 #include <thread>
 #include "opencv2/core.hpp"
-
+#include <opencv2/videoio.hpp>
+#include <opencv2/imgproc/types_c.h>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <bits/fcntl-linux.h>
+#include <fcntl.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -25,7 +30,7 @@
 
 StatsServer::StatsServer()
 {
-
+    
 }
 
 StatsServer::~StatsServer()
@@ -41,12 +46,11 @@ void StatsServer::readVoid()
 }
 
 void StatsServer::startServer(){
-
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
-    char *hello = "Hello from server";
+    //std::cout<<"here1"<<std::endl;
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -54,6 +58,7 @@ void StatsServer::startServer(){
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
+    //std::cout<<"here2"<<std::endl;
 
     // Forcefully attaching socket to the port 8080
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
@@ -65,6 +70,7 @@ void StatsServer::startServer(){
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons( PORT );
+    //std::cout<<"here3"<<std::endl;
 
     // Forcefully attaching socket to the port 8080
     if (bind(server_fd, (struct sockaddr *)&address,
@@ -78,6 +84,7 @@ void StatsServer::startServer(){
         perror("listen");
         exit(EXIT_FAILURE);
     }
+    
     std::cout<<"waiting client"<<std::endl;
     if ((sock = accept(server_fd, (struct sockaddr *)&address,
                        (socklen_t*)&addrlen))<0)
@@ -166,6 +173,7 @@ void StatsServer::startServer(){
     while (!stopThread())
     {
         if (imageSendMode.get()) {
+            //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
             sendImage(camModule.leftImage.getImage(), true);
             sendImage(camModule.rightImage.getImage(), false);
             testcounter++;
@@ -201,6 +209,19 @@ bool StatsServer::stopThread()
     return stopBool;
 }
 
+int StatsServer::GetCPULoad() {
+    int FileHandler;
+    char FileBuffer[1024];
+    float load;
+
+    FileHandler = open("/proc/loadavg", O_RDONLY);
+    if(FileHandler < 0) {
+        return -1; }
+    read(FileHandler, FileBuffer, sizeof(FileBuffer) - 1);
+    sscanf(FileBuffer, "%f", &load);
+    close(FileHandler);
+    return (int)(load * 100);
+}
 
 
 void StatsServer::sendAllert(std::string s)
