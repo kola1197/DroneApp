@@ -42,7 +42,11 @@ public:
 #endif
 private:
     MutexBool threadStop{false};
+#ifdef __arm__
     int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
+#else
+    int testMode = 1;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
+#endif
     void getDirectoryToSave();
     std::string dirToSave = "";
     int saveCounter=0;
