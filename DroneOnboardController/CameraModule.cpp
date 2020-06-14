@@ -230,6 +230,10 @@ int CameraModule::my_callback(int data_type, int data_len, char *content)
 
 #endif
 
+int CameraModule::getTestMode(){
+    return testMode;
+}
+
 int CameraModule::setTestMode(int i)
 {
     threadStop.set(true);

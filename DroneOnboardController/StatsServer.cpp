@@ -173,8 +173,9 @@ void StatsServer::startServer(){
     {
         if (imageSendMode.get()) {
             //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
-            sendImage(camModule.leftImage.getImage(), true);
-            sendImage(camModule.rightImage.getImage(), false);
+            bool isGrey = camModule.getTestMode() == 0;
+            sendImage(camModule.leftImage.getImage(), true, isGrey);
+            sendImage(camModule.rightImage.getImage(), false, isGrey);
             testcounter++;
         }
         //std::cout<<"images sent "<<testcounter<<std::endl;
@@ -236,37 +237,69 @@ void StatsServer::sendAllert(std::string s)
     sendMessage(m);
 }
 
-void StatsServer::sendImage(std::shared_ptr<cv::Mat> image, bool left)
+void StatsServer::sendImage(std::shared_ptr<cv::Mat> image, bool left, bool isGrey)
 {
-
-    MessageWithImage m{};
-    counter++;
-    m.height = image.get()->size().height;//*image.size().height;
-    m.width = image->size().width;
-    m.dataSize = image->total()*image->elemSize();
-    std::string text = "";
-    if (left)
+    if (isGrey)
     {
-        text = "left image";
-        m.type = MessageWithImage::LEFT_IMAGE;
-    } else{
-        text = "right image";
-        m.type = MessageWithImage::RIGHT_IMAGE;
+        MessageWithGrayImage m{};
+        counter++;
+        m.height = image.get()->size().height;//*image.size().height;
+        m.width = image->size().width;
+        m.dataSize = image->total()*image->elemSize();
+        std::cout<<"gray size"<<m.dataSize<<std::endl;
+        std::string text = "";
+        if (left)
+        {
+            text = "left image";
+            m.type = MessageWithGrayImage::LEFT_IMAGE;
+        } else{
+            text = "right image";
+            m.type = MessageWithGrayImage::RIGHT_IMAGE;
+        }
+        for (int i=0;i<200;i++)
+        {
+            m.text[i] = '0';
+        }
+        for (int i=0;i<text.length();i++)
+        {
+            m.text[i] = text.at(i);
+        }
+        for (int i =0;i< m.dataSize;i++)
+        {
+            m.imData[i] = image->data[i];
+        }
+        sendMessage(m);
+    } else {
+        MessageWithImage m{};
+        counter++;
+        m.height = image.get()->size().height;//*image.size().height;
+        m.width = image->size().width;
+        m.dataSize = image->total()*image->elemSize();
+        std::string text = "";
+        if (left)
+        {
+            text = "left image";
+            m.type = MessageWithImage::LEFT_IMAGE;
+        } else{
+            text = "right image";
+            m.type = MessageWithImage::RIGHT_IMAGE;
+        }
+        for (int i=0;i<200;i++)
+        {
+            m.text[i] = '0';
+        }
+        for (int i=0;i<text.length();i++)
+        {
+            m.text[i] = text.at(i);
+        }
+        for (int i =0;i< m.dataSize;i++)
+        {
+            m.imData[i] = image->data[i];
+        }
+        sendMessage(m);
     }
-    for (int i=0;i<200;i++)
-    {
-        m.text[i] = '0';
-    }
-    for (int i=0;i<text.length();i++)
-    {
-        m.text[i] = text.at(i);
-    }
-    for (int i =0;i< m.dataSize;i++)
-    {
-        m.imData[i] = image->data[i];
-    }
-    sendMessage(m);
 }
+
 
 
 
@@ -292,4 +325,16 @@ void StatsServer::sendMessage(MessageWithImage m)
     send(sock, &m, sizeof(m), 0);
     sendMutex.unlock();
 }
+
+void StatsServer::sendMessage(MessageWithGrayImage m)
+{
+    HarbingerMessage h;
+    h.type = HarbingerMessage::MESSAGE_WITH_IMAGE;
+    h.code = 239;
+    sendMutex.lock();
+    send(sock, &h, sizeof(h), 0);
+    send(sock, &m, sizeof(m), 0);
+    sendMutex.unlock();
+}
+
 #pragma clang diagnostic pop

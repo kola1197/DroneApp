@@ -39,12 +39,14 @@ private:
     bool stopThread();
     int counter = 0;
     MutexBool imageSendMode {false};
-    void sendMessage(SystemMessage m);
     std::mutex sendMutex;
-    void sendImage(std::shared_ptr<cv::Mat> image, bool left);
+    void sendImage(std::shared_ptr<cv::Mat> image, bool left, bool isGrey);
+    void sendMessage(SystemMessage m);
     void sendMessage(MessageWithImage m);
+    void sendMessage(MessageWithGrayImage m);
     void sendAllert(std::string);
     int GetCPULoad();
+
 };
 
 

@@ -27,6 +27,7 @@ public:
     void stopThread();
     void setImageCaptureMode(bool mode);
     int setTestMode(int i);
+    int getTestMode();
 
 #ifdef __arm__                                                           //dji modules installed only on raspberry pi
     static int my_callback(int data_type, int data_len, char *content);
