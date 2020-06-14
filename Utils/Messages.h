@@ -11,7 +11,7 @@
 //enum Type { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY, SET_IMAGE_SEND_MODE };
 
 struct HarbingerMessage {                                           //sends before other messages, to set resiver to it
-    enum Type {TEST_MESSAGE, MESSAGE_WITH_IMAGE, MESSAGE_WITH_GRAY_IMAGE, SYSTEM_MESSAGE};
+    enum Type {TEST_MESSAGE, MESSAGE_WITH_IMAGE, MESSAGE_WITH_GRAY_IMAGE, SYSTEM_MESSAGE, PING_MESSAGE};
     Type type;
     int code;
 };
@@ -45,6 +45,10 @@ struct SystemMessage {
     char text[200];
     int i[8];
     Type type;
+};
+
+struct PingMessage{
+    int64 time[2];
 };
 
 class Messages {

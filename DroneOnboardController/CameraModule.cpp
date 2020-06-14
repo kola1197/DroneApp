@@ -193,6 +193,7 @@ int CameraModule::startThread() {
     if (testMode == 0)
     {
         //testMode = 1;
+        std::cout<<"Haven't got arm processor with DJI system"<<std::endl;
         result = 1;
     }
     #endif

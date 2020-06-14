@@ -50,13 +50,13 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>380</y>
-      <width>241</width>
-      <height>141</height>
+      <y>340</y>
+      <width>221</width>
+      <height>171</height>
      </rect>
     </property>
     <property name="text">
-     <string>Info: NOT CONNECTED</string>
+     <string>Info: NOT CONNECTED TO PX</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -137,6 +137,22 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="infoLabelRPI">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>340</y>
+      <width>221</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Not connected to raspberry</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
     </property>
    </widget>
   </widget>

@@ -109,7 +109,7 @@ void StatsClient::connectToDroneServer(std::string ip)
                     }
                 }
                 std::memcpy(&m,msg , sizeof(m));
-                if ( m.type == MessageWithImage::LEFT_IMAGE)
+                if ( m.type == MessageWithGrayImage::LEFT_IMAGE)
                 {
                     uchar imdata [m.dataSize];
                     for (int i = 0;i<m.dataSize;i++)
@@ -117,15 +117,15 @@ void StatsClient::connectToDroneServer(std::string ip)
                         imdata[i] = m.imData[i];
                     }
                     cv::Mat img1(cv::Size(m.width, m.height), CV_8UC1, imdata);
-                    std::cout<<"GOT CREY"<<std::endl;
-                    cv::imwrite("../TESTGREY.jpg",img1);
+                    //std::cout<<"GOT CREY"<<std::endl;
+                    //cv::imwrite("../TESTGREY.jpg",img1);
                     QImage image = mat2RealQImage(img1, true);
                     //counter++;
                     //std::cout<<"counter = "<<counter<<std::endl;
                     emit transmit_to_left_image(image);
                     //cv::imshow("Left image", img1);
                 }
-                if ( m.type == MessageWithImage::RIGHT_IMAGE )
+                if ( m.type == MessageWithGrayImage::RIGHT_IMAGE )
                 {
                     uchar imdata [m.dataSize];
                     for (int i = 0;i<m.dataSize;i++)
@@ -133,6 +133,7 @@ void StatsClient::connectToDroneServer(std::string ip)
                         imdata[i] = m.imData[i];
                     }
                     cv::Mat img1(cv::Size(m.width, m.height), CV_8UC1, imdata);
+                    cv::imwrite("../RightGREY.jpg",img1);
                     QImage image = mat2RealQImage(img1, true);
                     emit transmit_to_right_image(image);
                 }
@@ -155,7 +156,7 @@ void StatsClient::connectToDroneServer(std::string ip)
                 {
                     case SystemMessage::TEXT_ALLERT:
                         string =  m.text;
-                        emit transmit_to_gui(string);                                  //TODO change to "reactToSysCommand"
+                        emit transmit_to_gui(string);
                         break;
                     case SystemMessage::VIDEO_STREAM_STATUS:
                         std::cout<<"VIDEO_STREAM_STATUS"<<std::endl;
@@ -170,9 +171,36 @@ void StatsClient::connectToDroneServer(std::string ip)
                         break;
                 }
             }
+            if (h.type == HarbingerMessage::PING_MESSAGE)
+            {
+                PingMessage m;
+                char msg[sizeof (m)];
+                int bytes;
+                for (int i = 0; i < sizeof(m); i += bytes) {
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
+                        std::cout<<"error"<<std::endl;
+                        errorServerStop();
+                    }
+                }
+                std::memcpy(&m,msg , sizeof(m));
+                int64 now =std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                //std::cout<<"ping: "<<m.time[0]<<"-_-"<<m.time[1]<<"-_-"<<now<<std::endl;
+                QString q = "PING(milliseconds):\nTo Raspberry: " + QString::number(m.time[1] - m.time[0]) + "\n" + "From Raspberry: " + QString::number(now - m.time[1]);
+                emit transmitPing( q);
+            }
         }
     });
     thr.detach();
+    QTimer::singleShot(100,this, SLOT(sendPingRequest()));
+}
+
+void StatsClient::sendPingRequest()
+{
+    //std::cout<<"PING"<<std::endl;
+    PingMessage m;
+    m.time[0] = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    sendMessage(m);
+    QTimer::singleShot(1000,this, SLOT(sendPingRequest()));
 }
 
 void StatsClient::errorServerStop()
@@ -227,4 +255,15 @@ void StatsClient::sendAllert(std::string s)
         }
     }
     sendMessage(m);
+}
+
+void StatsClient::sendMessage(PingMessage m)
+{
+    HarbingerMessage h;
+    h.type = HarbingerMessage::PING_MESSAGE;
+    h.code = 239;
+    sendMutex.lock();
+    send(sock, &h, sizeof(h), 0);
+    send(sock, &m, sizeof(m), 0);
+    sendMutex.unlock();
 }

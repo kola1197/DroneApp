@@ -164,22 +164,45 @@ void StatsServer::startServer(){
                         break;
                 }
             }
+            if (h.type == HarbingerMessage::PING_MESSAGE)
+            {
+                PingMessage m;
+                char msg[sizeof (m)];
+                int bytes;
+                for (int i = 0; i < sizeof(m); i += bytes) {
+                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
+                        std::cout<<"error"<<std::endl;
+                    }
+                }
+                std::memcpy(&m, msg, sizeof(m));
+                //startThreadstd::cout<<"PING"<<std::endl;
+                m.time[1] = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                sendMessage(m);
+            }
         }
     });
     thr.detach();
-    camModule.startThread();
-    int testcounter = 0;
-    while (!stopThread())
-    {
-        if (imageSendMode.get()) {
-            //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
-            bool isGrey = camModule.getTestMode() == 0;
-            sendImage(camModule.leftImage.getImage(), true, isGrey);
-            sendImage(camModule.rightImage.getImage(), false, isGrey);
-            testcounter++;
+    int res = camModule.startThread();
+    if (res == 0) {
+        int testcounter = 0;
+        while (!stopThread()) {
+            if (imageSendMode.get()) {
+                //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
+                bool isGrey = camModule.getTestMode() == 0;
+                sendImage(camModule.leftImage.getImage(), true, isGrey);
+                sendImage(camModule.rightImage.getImage(), false, isGrey);
+                testcounter++;
+            }
+            //std::cout<<"images sent "<<testcounter<<std::endl;
         }
-        //std::cout<<"images sent "<<testcounter<<std::endl;
     }
+    else{
+        sendAllert("Wrong image capture mode");
+        while (!stopThread())
+        {
+            sleep(1);
+        }
+    };
 
     //camModule->startThread();
 //    int testcounter = 0;
@@ -330,6 +353,17 @@ void StatsServer::sendMessage(MessageWithGrayImage m)
 {
     HarbingerMessage h;
     h.type = HarbingerMessage::MESSAGE_WITH_GRAY_IMAGE;
+    h.code = 239;
+    sendMutex.lock();
+    send(sock, &h, sizeof(h), 0);
+    send(sock, &m, sizeof(m), 0);
+    sendMutex.unlock();
+}
+
+void StatsServer::sendMessage(PingMessage m)
+{
+    HarbingerMessage h;
+    h.type = HarbingerMessage::PING_MESSAGE;
     h.code = 239;
     sendMutex.lock();
     send(sock, &h, sizeof(h), 0);

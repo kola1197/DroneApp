@@ -47,6 +47,7 @@ private:
     void sendAllert(std::string);
     int GetCPULoad();
 
+    void sendMessage(PingMessage m);
 };
 
 

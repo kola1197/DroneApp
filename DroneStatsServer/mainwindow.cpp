@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitOnboardVideoCaptureStatus(bool)),this,SLOT(setOnboardVideoCaptureMode(bool)));
     connect(&client,SIGNAL(transmitVideoStreamStatus(bool)),this,SLOT(setVideoStreamMode(bool)));
     connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
+    connect(&client,SIGNAL(transmitPing(QString)),this,SLOT(setPing(QString)));
 
 
     std::thread thr([this]()
@@ -50,6 +51,13 @@ void MainWindow::setTestImage()
     pic = pic.scaled(320,240);
     ui->leftImageLabel->setPixmap(pic);
     ui->rightImageLabel->setPixmap(pic);
+}
+
+void MainWindow::setPing(QString q)
+{
+
+    //QString q = "to Raspberry: " + QString::number(to) + "\n" + "from Raspberry: " + QString::number(from);
+    ui->infoLabelRPI->setText(q);
 }
 
 void MainWindow::on_connectButton_released()

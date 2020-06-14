@@ -32,17 +32,7 @@ public:
     void connectToDroneServer(std::string ip);
     void sendMessage(MessageWithImage m);
     void sendMessage(SystemMessage m);
-    MutexBool closeConnectionThreadBool{false};
-
-private:
-    int sock = 0;
-    QImage mat2RealQImage(cv::Mat const &src, bool isGray);
-    int counter = 0;
-    std::mutex sendMutex;
-    void sendAllert(std::string s);
-    void errorServerStop();
-
-    //on true closes connection
+    MutexBool closeConnectionThreadBool{false};              //on true closes connection
 signals:
     void transmit_to_gui(QString value);
     void transmit_to_left_image(QImage value);
@@ -50,7 +40,18 @@ signals:
     void transmitOnboardVideoCaptureStatus(bool mode);
     void transmitVideoStreamStatus(bool mode);
     void transmitConnectionStatus(bool connected);
+    void transmitPing(QString q);
 
+private slots:
+    void sendPingRequest();
+private:
+    int sock = 0;
+    QImage mat2RealQImage(cv::Mat const &src, bool isGray);
+    int counter = 0;
+    std::mutex sendMutex;
+    void sendAllert(std::string s);
+    void errorServerStop();
+    void sendMessage(PingMessage m);
 };
 
 #endif // STATSCLIENT_H

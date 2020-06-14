@@ -26,7 +26,7 @@ public slots:
     void setOnboardVideoCaptureMode(bool mode);
     void setVideoStreamMode(bool mode);
     void setConnected(bool connected);                   //on server tcp connection on/off changes
-
+    void setPing(QString q);
 
 private slots:
     void on_connectButton_released();
