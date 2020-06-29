@@ -187,6 +187,7 @@ void StatsServer::startServer(){
         int testcounter = 0;
         while (!stopThread()) {
             if (imageSendMode.get()) {
+                //std::cout<<"image sent"<<std::endl;
                 //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
                 bool isGrey = camModule.getTestMode() == 0;
                 sendImage(camModule.leftImage.getImage(), true, isGrey);

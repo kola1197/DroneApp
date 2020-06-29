@@ -60,6 +60,8 @@ void StatsClient::connectToDroneServer(std::string ip)
             std::memcpy(&h,hmsg , sizeof(h));
             if (h.type == HarbingerMessage::MESSAGE_WITH_IMAGE)
             {
+                std::cout<<"got normal"<<std::endl;
+
                 MessageWithImage m;
                 char msg[sizeof (m)];
                 int bytes;
@@ -99,6 +101,7 @@ void StatsClient::connectToDroneServer(std::string ip)
             }
             if (h.type == HarbingerMessage::MESSAGE_WITH_GRAY_IMAGE)
             {
+                std::cout<<"got gray"<<std::endl;
                 MessageWithGrayImage m;
                 char msg[sizeof (m)];
                 int bytes;

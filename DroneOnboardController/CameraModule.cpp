@@ -21,17 +21,56 @@ DJI_lock  CameraModule::g_lock;
 DJI_event CameraModule::g_event;
 #endif
 
+#include <unistd.h>
+#include <opencv/cv.hpp>
+
 int CameraModule::startThread() {
     int result = 0;
-    std::cout<<"starting thread"<<std::endl;
-    if (testMode == 1) {                                                                   //TODO: add check of video0/video2 exist
+    std::cout << "starting thread" << std::endl;
+    if (testMode == 2) {
+        std::thread thr([this]() {
+            cv::Mat frame;
+            cv::Mat out;
+            std::string leftPart = "/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
+            std::string rightPart = "/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
+            int counter = 0;
+            while ((!threadStop.get()) && counter < 1600) {
+                //TODO: check file exists
+                std::string s = leftPart.c_str();
+                s.append(std::to_string(counter).c_str());
+                s.append(".jpg");
+                std::cout << "left path: " << s << std::endl;
+                out = cv::imread(s);
+                //cv::cvtColor(frame, out, CV_GRAY2RGB);
+                leftImage.setImage(out.size(), out.data);
+                int type = out.type();
+                //std::cout<<"type: "<<type<<std::endl;
+                //cv::imshow("test", out);
+                //cv::waitKey(0);
+                s = rightPart.c_str();
+                s.append(std::to_string(counter).c_str());
+                s.append(".jpg");
+                //std::cout<<"right path: "<<s<<std::endl;
+                out = cv::imread(s);
+                //cv::cvtColor(frame, out, CV_GRAY2RGB);
+                rightImage.setImage(out.size(), out.data);
+                usleep(33000+);
+                counter++;
+            }
+            std::cout << "Thread done" << std::endl;
+        });
+        thr.detach();
+    }
+    if (testMode ==
+        1) {                                                                   //TODO: add check of video0/video2 exist
         std::thread thr([this]() {
             cv::VideoCapture leftCamera("/dev/video2");
             cv::VideoCapture rightCamera("/dev/video0");
             //cv::VideoCapture rightCamera(0);
             cv::Mat frame;
             cv::Mat out;
-            int64 lastSave = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            int64 lastSave = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
             //std::chrono::milliseconds lastSave = duration_cast< std::chrono::milliseconds >(
             //        std::chrono::system_clock::now().time_since_epoch()
             //);            //std::cout<<threadStop.get()<<" thread stop value"<<std::endl;
@@ -47,9 +86,9 @@ int CameraModule::startThread() {
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
                 rightImage.setImage(out.size(), out.data);
-                int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-                if (imageCaptureMode.get() && (now - lastSave) > 20 )
-                {
+                int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                if (imageCaptureMode.get() && (now - lastSave) > 20) {
                     lastSave = now;
                     saveImages();
                 }
@@ -57,7 +96,7 @@ int CameraModule::startThread() {
         });
         thr.detach();
     }
-    #ifdef __arm__
+#ifdef __arm__
     if (testMode == 0)
     {
     int h = 320;
@@ -68,18 +107,18 @@ int CameraModule::startThread() {
     width = &w;
     reset_config();  // clear all data subscription
 
-	int err_code = init_transfer(); //wait for board ready and init transfer thread
-	//RETURN_IF_ERR( err_code );
+    int err_code = init_transfer(); //wait for board ready and init transfer thread
+    //RETURN_IF_ERR( err_code );
 
-	int online_status[CAMERA_PAIR_NUM];
-	err_code = get_online_status(online_status);
-	//RETURN_IF_ERR(err_code);
-	// get cali param
-	stereo_cali cali[CAMERA_PAIR_NUM];
-	err_code = get_stereo_cali(cali);
-	//RETURN_IF_ERR(err_code);
-    
-    #if !USE_GUIDANCE_ASSISTANT_CONFIG
+    int online_status[CAMERA_PAIR_NUM];
+    err_code = get_online_status(online_status);
+    //RETURN_IF_ERR(err_code);
+    // get cali param
+    stereo_cali cali[CAMERA_PAIR_NUM];
+    err_code = get_stereo_cali(cali);
+    //RETURN_IF_ERR(err_code);
+
+#if !USE_GUIDANCE_ASSISTANT_CONFIG
         err_code = select_greyscale_image( sensor_id, true );
         //RETURN_IF_ERR( err_code );
         err_code = select_greyscale_image( sensor_id, false );
@@ -95,25 +134,25 @@ int CameraModule::startThread() {
         select_obstacle_distance();
         select_velocity();
         select_motion();
-    #endif
+#endif
     e_device_type dt;
-	get_device_type(&dt);
-	//cout<<"device type: "<<(dt==Guidance?"Guidance":"GuidanceLite")<<endl;
+    get_device_type(&dt);
+    //cout<<"device type: "<<(dt==Guidance?"Guidance":"GuidanceLite")<<endl;
 
-	get_image_size(width, height);
-	//cout<<"(width, height)="<<WIDTH<<", "<<HEIGHT<<endl;
+    get_image_size(width, height);
+    //cout<<"(width, height)="<<WIDTH<<", "<<HEIGHT<<endl;
 
-	err_code = set_sdk_event_handler( my_callback );
-	//RETURN_IF_ERR( err_code );
-	err_code = start_transfer();
-	//RETURN_IF_ERR( err_code );
+    err_code = set_sdk_event_handler( my_callback );
+    //RETURN_IF_ERR( err_code );
+    err_code = start_transfer();
+    //RETURN_IF_ERR( err_code );
 
-	// for setting exposure
-	exposure_param para;
-	para.m_is_auto_exposure = 1;
-	para.m_step = 10;
-	para.m_expected_brightness = 120;
-	para.m_camera_pair_index = sensor_id;
+    // for setting exposure
+    exposure_param para;
+    para.m_is_auto_exposure = 1;
+    para.m_step = 10;
+    para.m_expected_brightness = 120;
+    para.m_camera_pair_index = sensor_id;
 
         std::cout<<"Creating thread"<<std::endl;
         std::thread thr([this]
@@ -189,76 +228,70 @@ int CameraModule::startThread() {
         thr.detach();
 
     }
-    #else
-    if (testMode == 0)
-    {
+#else
+    if (testMode == 0) {
         //testMode = 1;
-        std::cout<<"Haven't got arm processor with DJI system"<<std::endl;
+        std::cout << "Haven't got arm processor with DJI system" << std::endl;
         result = 1;
     }
-    #endif
+#endif
     return result;                                  // 0 - ok, 1 - this testMode can not be set
 }
 
 #ifdef __arm__
 int CameraModule::my_callback(int data_type, int data_len, char *content)
 {
-	g_lock.enter();
-	if (e_image == data_type && NULL != content)
-	{
-		image_data* data = (image_data* )content;
-		if ( data->m_greyscale_image_left[sensor_id] ){
-			g_greyscale_image_left = cv::Mat::zeros(240,320,CV_8UC1);
-			memcpy( g_greyscale_image_left.data, data->m_greyscale_image_left[sensor_id], 76800 );
-		}else g_greyscale_image_left.release();
-		if ( data->m_greyscale_image_right[sensor_id] ){
-			g_greyscale_image_right = cv::Mat::zeros(240,320,CV_8UC1);
-			memcpy( g_greyscale_image_right.data, data->m_greyscale_image_right[sensor_id], 76800 );
-		}else g_greyscale_image_right.release();
-		/*if ( data->m_depth_image[sensor_id] ){
-			g_depth = cv::Mat::zeros(HEIGHT,WIDTH,CV_16SC1);
-			memcpy( g_depth.data, data->m_depth_image[sensor_id], IMAGE_SIZE * 2 );
-		}else g_depth.release();
-		if ( data->m_disparity_image[sensor_id] ){
-			g_disparity = cv::Mat::zeros(HEIGHT,WIDTH,CV_16SC1);
-			memcpy( g_disparity.data, data->m_disparity_image[sensor_id], IMAGE_SIZE * 2 );
-		}else g_disparity.release();*/
-	}
-	g_lock.leave();
-	g_event.set_event();
+    g_lock.enter();
+    if (e_image == data_type && NULL != content)
+    {
+        image_data* data = (image_data* )content;
+        if ( data->m_greyscale_image_left[sensor_id] ){
+            g_greyscale_image_left = cv::Mat::zeros(240,320,CV_8UC1);
+            memcpy( g_greyscale_image_left.data, data->m_greyscale_image_left[sensor_id], 76800 );
+        }else g_greyscale_image_left.release();
+        if ( data->m_greyscale_image_right[sensor_id] ){
+            g_greyscale_image_right = cv::Mat::zeros(240,320,CV_8UC1);
+            memcpy( g_greyscale_image_right.data, data->m_greyscale_image_right[sensor_id], 76800 );
+        }else g_greyscale_image_right.release();
+        /*if ( data->m_depth_image[sensor_id] ){
+            g_depth = cv::Mat::zeros(HEIGHT,WIDTH,CV_16SC1);
+            memcpy( g_depth.data, data->m_depth_image[sensor_id], IMAGE_SIZE * 2 );
+        }else g_depth.release();
+        if ( data->m_disparity_image[sensor_id] ){
+            g_disparity = cv::Mat::zeros(HEIGHT,WIDTH,CV_16SC1);
+            memcpy( g_disparity.data, data->m_disparity_image[sensor_id], IMAGE_SIZE * 2 );
+        }else g_disparity.release();*/
+    }
+    g_lock.leave();
+    g_event.set_event();
 
-	return 0;
+    return 0;
 }
 
 #endif
 
-int CameraModule::getTestMode(){
+int CameraModule::getTestMode() {
     return testMode;
 }
 
-int CameraModule::setTestMode(int i)
-{
+int CameraModule::setTestMode(int i) {
     threadStop.set(true);
     testMode = i;
     return startThread();
 }
 
-CameraModule::CameraModule()
-{
+CameraModule::CameraModule() {
     //getDirectoryToSave();
 
 }
 
-CameraModule::~CameraModule()
-{
+CameraModule::~CameraModule() {
     stopThread();
 }
 
-void CameraModule::setImageCaptureMode(bool mode)
-{
+void CameraModule::setImageCaptureMode(bool mode) {
     if (mode) {
-        if (!imageCaptureMode.get())
-        {
+        if (!imageCaptureMode.get()) {
             getDirectoryToSave();
             saveCounter = 0;
             std::string path0 = dirToSave + "/0";
@@ -273,43 +306,38 @@ void CameraModule::setImageCaptureMode(bool mode)
             system(com1.data());
         }
         imageCaptureMode.set(mode);
-    }
-    else{
+    } else {
         imageCaptureMode.set(mode);
     }
 }
 
-void CameraModule::saveImages()
-{
+void CameraModule::saveImages() {
 
     std::string path0 = dirToSave + "/0";
     std::string path1 = dirToSave + "/1";
-    path0.erase(std::remove(path0.begin(),path0.end(),' '),path0.end());
-    path1.erase(std::remove(path1.begin(),path1.end(),' '),path1.end());
-    path0.erase(std::remove(path0.begin(),path0.end(),'\n'),path0.end());
-    path1.erase(std::remove(path1.begin(),path1.end(),'\n'),path1.end());
-    path0 += "/" + std::to_string(saveCounter)+".jpg";
-    path1 += "/" + std::to_string(saveCounter)+".jpg";
-    cv::imwrite(path0,*leftImage.getImage());
-    cv::imwrite(path1,*rightImage.getImage());
-    std::cout<<path0<<std::endl;
+    path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());
+    path1.erase(std::remove(path1.begin(), path1.end(), ' '), path1.end());
+    path0.erase(std::remove(path0.begin(), path0.end(), '\n'), path0.end());
+    path1.erase(std::remove(path1.begin(), path1.end(), '\n'), path1.end());
+    path0 += "/" + std::to_string(saveCounter) + ".jpg";
+    path1 += "/" + std::to_string(saveCounter) + ".jpg";
+    cv::imwrite(path0, *leftImage.getImage());
+    cv::imwrite(path1, *rightImage.getImage());
+    std::cout << path0 << std::endl;
     saveCounter++;
 }
 
-void CameraModule::getDirectoryToSave()
-{
+void CameraModule::getDirectoryToSave() {
     auto end = std::chrono::system_clock::now();
     std::time_t end_time = std::chrono::system_clock::to_time_t(end);
     dirToSave = std::ctime(&end_time);
 }
 
-void CameraModule::stopThread()
-{
+void CameraModule::stopThread() {
     threadStop.set(true);
 }
 
-bool CameraModule::active()
-{
+bool CameraModule::active() {
     bool result = !threadStop.get();
     return result;
 }
