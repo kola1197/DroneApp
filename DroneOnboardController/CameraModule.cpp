@@ -54,35 +54,62 @@ int CameraModule::startThread() {
                 out = cv::imread(s);
                 //cv::cvtColor(frame, out, CV_GRAY2RGB);
                 rightImage.setImage(out.size(), out.data);
-                usleep(33000+);
+                usleep(33000);
                 counter++;
             }
             std::cout << "Thread done" << std::endl;
         });
         thr.detach();
     }
-    if (testMode ==
-        1) {                                                                   //TODO: add check of video0/video2 exist
+    if (testMode == 1) {                                                                   //TODO: add check of video0/video2 exist
         std::thread thr([this]() {
-            cv::VideoCapture leftCamera("/dev/video2");
-            cv::VideoCapture rightCamera("/dev/video0");
+            cv::VideoCapture leftCamera("/dev/video0");
+            cv::VideoCapture rightCamera("/dev/video2");
             //cv::VideoCapture rightCamera(0);
             cv::Mat frame;
             cv::Mat out;
             int64 lastSave = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            //std::chrono::milliseconds lastSave = duration_cast< std::chrono::milliseconds >(
-            //        std::chrono::system_clock::now().time_since_epoch()
-            //);            //std::cout<<threadStop.get()<<" thread stop value"<<std::endl;
             while (!threadStop.get()) {
                 leftCamera >> frame;
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
                 //cv::imwrite("BEFORE.jpg",out);
                 leftImage.setImage(out.size(), out.data);
-                //cv::imwrite("AFTER.jpg",*leftImage.getImage());
+                cv::imwrite("AFTER.jpg",*leftImage.getImage());
 
                 rightCamera >> frame;
+                cv::cvtColor(frame, out, CV_BGR2RGB);
+                resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
+                rightImage.setImage(out.size(), out.data);
+                int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                if (imageCaptureMode.get() && (now - lastSave) > 20) {
+                    lastSave = now;
+                    saveImages();
+                }
+            }
+        });
+        thr.detach();
+    }
+    if (testMode == 3) {                                                                   //TODO: add check of video0/video2 exist
+        std::thread thr([this]() {
+            cv::VideoCapture leftRightCamera("/dev/video0");
+            //cv::VideoCapture rightCamera("/dev/video2");
+            //cv::VideoCapture rightCamera(0);
+            cv::Mat frame;
+            cv::Mat out;
+            int64 lastSave = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            while (!threadStop.get()) {
+                leftRightCamera >> frame;
+                cv::cvtColor(frame, out, CV_BGR2RGB);
+                resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
+                //cv::imwrite("BEFORE.jpg",out);
+                leftImage.setImage(out.size(), out.data);
+                cv::imwrite("AFTER.jpg",*leftImage.getImage());
+
+                leftRightCamera >> frame;
                 cv::cvtColor(frame, out, CV_BGR2RGB);
                 resize(out, out, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
                 rightImage.setImage(out.size(), out.data);

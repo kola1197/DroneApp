@@ -45,7 +45,7 @@ private:
 #ifdef __arm__
     int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
 #else
-    int testMode = 2;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
+    int testMode = 3;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
 #endif
     void getDirectoryToSave();
     std::string dirToSave = "";
