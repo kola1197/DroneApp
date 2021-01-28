@@ -11,6 +11,7 @@
 #include <unistd.h>    // close()
 #include <thread>
 #include "opencv2/core.hpp"
+#include "OdometryModule.h"
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
@@ -57,8 +58,6 @@ void StatsServer::startServer(){
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
-    //std::cout<<"here2"<<std::endl;
-
     // Forcefully attaching socket to the port 8080
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
                    &opt, sizeof(opt)))
@@ -184,6 +183,8 @@ void StatsServer::startServer(){
     thr.detach();
     int res = camModule.startThread();
     if (res == 0) {
+        OdometryModule odometryModule(&camModule);
+        odometryModule.startThread();
         int testcounter = 0;
         while (!stopThread()) {
             if (imageSendMode.get()) {

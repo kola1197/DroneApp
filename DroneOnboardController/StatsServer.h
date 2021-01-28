@@ -46,7 +46,6 @@ private:
     void sendMessage(MessageWithGrayImage m);
     void sendAllert(std::string);
     int GetCPULoad();
-
     void sendMessage(PingMessage m);
 };
 

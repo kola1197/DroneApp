@@ -10,6 +10,7 @@
 #include <mutex>
 #include "DroneImage.h"
 #include "../Utils/MutexBool.h"
+#include "../Utils/AsyncVar.h"
 #ifdef __arm__
 #include "DJI_guidance.h"
 #include "DJI_utility.h"
@@ -28,6 +29,7 @@ public:
     void setImageCaptureMode(bool mode);
     int setTestMode(int i);
     int getTestMode();
+    AsyncVar<bool> gotImage{false};
 
 #ifdef __arm__                                                           //dji modules installed only on raspberry pi
     static int my_callback(int data_type, int data_len, char *content);
@@ -45,7 +47,7 @@ private:
 #ifdef __arm__
     int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
 #else
-    int testMode = 3;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
+    int testMode = 2;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
 #endif
     void getDirectoryToSave();
     std::string dirToSave = "";

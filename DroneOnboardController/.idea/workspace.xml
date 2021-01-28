@@ -7,11 +7,20 @@
   </component>
   <component name="CMakeSettings">
     <configurations>
-      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" ENABLED="true" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="910517c5-a1ca-4077-b9dd-8604a7c0ce03" name="Default Changelist" comment="" />
+    <list default="true" id="910517c5-a1ca-4077-b9dd-8604a7c0ce03" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/OdometryModule.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/OdometryModule.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CameraModule.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/CameraModule.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CameraModule.h" beforeDir="false" afterPath="$PROJECT_DIR$/CameraModule.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DroneImage.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/DroneImage.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/StatsServer.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/StatsServer.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/StatsServer.h" beforeDir="false" afterPath="$PROJECT_DIR$/StatsServer.h" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -21,25 +30,41 @@
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="ProjectId" id="1cbClUyxEhbS8uwnuFZhKkllyBG" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../PX/CMakeLists.txt" />
+    <property name="cf.first.check.clang-format" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../CMakeLists.txt" />
     <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RunManager">
-    <configuration name="DroneOnboardController" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="DroneOnboardController" TARGET_NAME="DroneOnboardController" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="DroneOnboardController" RUN_TARGET_NAME="DroneOnboardController">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DroneOnboardController" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="DroneOnboardController" TARGET_NAME="DroneOnboardController" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="DroneOnboardController" RUN_TARGET_NAME="DroneOnboardController">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="project-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -53,61 +78,23 @@
       <workItem from="1590788058352" duration="10401000" />
       <workItem from="1590818439632" duration="17500000" />
       <workItem from="1590898117390" duration="14027000" />
+      <workItem from="1611692072987" duration="22000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
-  <component name="WindowStateProjectService">
-    <state x="779" y="311" width="424" height="491" key="FileChooserDialogImpl" timestamp="1590867668512">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state x="779" y="311" width="424" height="491" key="FileChooserDialogImpl/72.27.1848.1053@72.27.1848.1053" timestamp="1590867668512" />
-    <state width="1802" height="261" key="GridCell.Tab.0.bottom" timestamp="1590913607498">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="261" key="GridCell.Tab.0.bottom/72.27.1848.1053@72.27.1848.1053" timestamp="1590913607498" />
-    <state width="1802" height="261" key="GridCell.Tab.0.center" timestamp="1590913607498">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="261" key="GridCell.Tab.0.center/72.27.1848.1053@72.27.1848.1053" timestamp="1590913607498" />
-    <state width="1802" height="261" key="GridCell.Tab.0.left" timestamp="1590913607497">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="261" key="GridCell.Tab.0.left/72.27.1848.1053@72.27.1848.1053" timestamp="1590913607497" />
-    <state width="1802" height="261" key="GridCell.Tab.0.right" timestamp="1590913607498">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="261" key="GridCell.Tab.0.right/72.27.1848.1053@72.27.1848.1053" timestamp="1590913607498" />
-    <state width="1802" height="340" key="GridCell.Tab.1.bottom" timestamp="1590823102606">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="340" key="GridCell.Tab.1.bottom/72.27.1848.1053@72.27.1848.1053" timestamp="1590823102606" />
-    <state width="1802" height="340" key="GridCell.Tab.1.center" timestamp="1590823102606">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="340" key="GridCell.Tab.1.center/72.27.1848.1053@72.27.1848.1053" timestamp="1590823102606" />
-    <state width="1802" height="340" key="GridCell.Tab.1.left" timestamp="1590823102606">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="340" key="GridCell.Tab.1.left/72.27.1848.1053@72.27.1848.1053" timestamp="1590823102606" />
-    <state width="1802" height="340" key="GridCell.Tab.1.right" timestamp="1590823102606">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state width="1802" height="340" key="GridCell.Tab.1.right/72.27.1848.1053@72.27.1848.1053" timestamp="1590823102606" />
-    <state x="485" y="188" width="1022" height="737" key="SettingsEditor" timestamp="1590900885114">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state x="485" y="188" width="1022" height="737" key="SettingsEditor/72.27.1848.1053@72.27.1848.1053" timestamp="1590900885114" />
-    <state x="652" y="381" key="com.intellij.ide.util.TipDialog" timestamp="1590898116235">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state x="652" y="381" key="com.intellij.ide.util.TipDialog/72.27.1848.1053@72.27.1848.1053" timestamp="1590898116235" />
-    <state x="659" y="259" width="672" height="678" key="search.everywhere.popup" timestamp="1590820577156">
-      <screen x="72" y="27" width="1848" height="1053" />
-    </state>
-    <state x="659" y="259" width="672" height="678" key="search.everywhere.popup/72.27.1848.1053@72.27.1848.1053" timestamp="1590820577156" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

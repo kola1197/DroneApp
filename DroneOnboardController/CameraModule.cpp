@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include "CameraModule.h"
 #include "stdio.h"
+#include "opencv2/xfeatures2d.hpp"
 
 #ifdef __arm__
 e_vbus_index CameraModule::sensor_id = e_vbus4;
@@ -24,6 +25,10 @@ DJI_event CameraModule::g_event;
 #include <unistd.h>
 #include <opencv/cv.hpp>
 
+inline bool exists (const std::string& name) {
+    return ( access( name.c_str(), F_OK ) != -1 );
+}
+
 int CameraModule::startThread() {
     int result = 0;
     std::cout << "starting thread" << std::endl;
@@ -31,29 +36,44 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
             cv::Mat frame;
             cv::Mat out;
-            std::string leftPart = "/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
-            std::string rightPart = "/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
+            std::string leftPart = "/home/nickolay/Odometry dataset/dataset/sequences/00/image_0/";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
+            std::string rightPart = "/home/nickolay/Odometry dataset/dataset/sequences/00/image_1/";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
+            //std::string leftPart = "/home/nickolay/test.jpg";
+            //std::string rightPart = "/home/nickolay/test.jpg";
+
             int counter = 0;
             while ((!threadStop.get()) && counter < 1600) {
                 //TODO: check file exists
+
                 std::string s = leftPart.c_str();
+                s.append("000000");
+                s.erase(s.begin() + s.size() - std::to_string(counter).size(),s.begin() + s.size());
                 s.append(std::to_string(counter).c_str());
-                s.append(".jpg");
-                std::cout << "left path: " << s << std::endl;
+                s.append(".png");
+                //std::cout << "left path: " << s << std::endl;
+                /*if (exists(leftPart))
+                {
+                    std::cout<<"exists"<<std::endl;
+                } else{
+                    std::cout<<"NOT EXISTS"<<std::endl;
+                }*/
                 out = cv::imread(s);
-                //cv::cvtColor(frame, out, CV_GRAY2RGB);
+                //cv::imshow("testL", out);
                 leftImage.setImage(out.size(), out.data);
                 int type = out.type();
                 //std::cout<<"type: "<<type<<std::endl;
                 //cv::imshow("test", out);
                 //cv::waitKey(0);
                 s = rightPart.c_str();
+                s.append("000000");
+                s.erase(s.begin() + s.size() - std::to_string(counter).size(),s.begin() + s.size());
                 s.append(std::to_string(counter).c_str());
-                s.append(".jpg");
+                s.append(".png");
                 //std::cout<<"right path: "<<s<<std::endl;
                 out = cv::imread(s);
                 //cv::cvtColor(frame, out, CV_GRAY2RGB);
                 rightImage.setImage(out.size(), out.data);
+                gotImage.set(true);
                 usleep(33000);
                 counter++;
             }

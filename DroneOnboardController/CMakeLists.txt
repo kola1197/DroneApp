@@ -16,7 +16,9 @@ IF ( USE_OPENCV )
         message("You requested OPENCV in the build, but none was found.")
     endif()
 ENDIF ()
-
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 #include_directories($(SOURCE_DIR)/../../../include)
 
 #if(WIN32)
@@ -43,11 +45,18 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
         ../Utils/MutexBool.cpp
         ../Utils/MutexBool.h
         ../Utils/Messages.cpp
-        ../Utils/Messages.h)
+        ../Utils/Messages.h
+        OdometryModule.cpp
+        OdometryModule.h
+        ../Utils/AsyncVar.h
+        ../Utils/AsyncVar.cpp
+    )
     find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
     target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
 ELSE()
     message("-- x64 architecture detected")
+    #set(CMAKE_AUTOUIC ON)
+    find_package(Qt5 COMPONENTS Widgets REQUIRED)
     add_executable(
         DroneOnboardController
         main.cpp
@@ -60,8 +69,21 @@ ELSE()
         ../Utils/MutexBool.cpp
         ../Utils/MutexBool.h
         ../Utils/Messages.cpp
-        ../Utils/Messages.h)
-    target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
+        ../Utils/Messages.h
+        ../Utils/AsyncVar.h
+        ../Utils/AsyncVar.cpp
+        OdometryModule.cpp
+        OdometryModule.h
+        depthmapcalibrator.ui
+        depthmapcalibrator.cpp
+        depthmapcalibrator.h
+        #dmcalibrator.ui
+        #dmcalibrator.cpp
+        #mcalibrator.h
+
+    )
+    target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} pthread)
+    #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()
 target_include_directories(DroneOnboardController PUBLIC Utils)
 
