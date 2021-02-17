@@ -13,7 +13,6 @@ int calibDM(int argc, char *argv[])
 
 int main(int argc, char *argv[]) {
     //calibDM(argc, argv);
-    std::cout<<"start"<<std::endl;
     StatsServer server;
     server.startServer();
     return 0;

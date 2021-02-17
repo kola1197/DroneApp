@@ -7,6 +7,7 @@
 #include "depthmapcalibrator.h"
 #include "ui_depthmapcalibrator.h"
 #include "OdometryModule.h"
+#include "opencv2/ximgproc/disparity_filter.hpp"
 #include <iostream>
 
 DepthMapCalibrator::DepthMapCalibrator(QWidget *parent) :
@@ -30,6 +31,14 @@ void DepthMapCalibrator::updateValues()
 
     cv::Mat leftImage = cv::imread(leftPart);
     cv::Mat rightImage = cv::imread(rightPart);
+
+    cv::Mat filtered_disp;
+    cv::Mat conf_map =  cv::Mat(leftImage.rows, leftImage.cols, CV_8U);
+    conf_map =  cv::Scalar(255);
+
+    cv::Rect ROI;
+
+
     //cv::imshow("testL", leftImage);
     //cv::imshow("testR", rightImage);
     //std::cout<<" imshow "<<std::endl;
@@ -49,6 +58,8 @@ void DepthMapCalibrator::updateValues()
 
     cv::Size imagesize = leftImageUndistorted.size();
     cv::Mat disparity_left=cv::Mat(imagesize.height,imagesize.width,leftImageUndistorted.type());
+    cv::Mat disparity_right=cv::Mat(imagesize.height,imagesize.width,leftImageUndistorted.type());
+
 
     cv::Mat leftGray,rightGray;
     cv::cvtColor(leftImageUndistorted,leftGray,cv::COLOR_BGR2GRAY);
@@ -81,6 +92,10 @@ void DepthMapCalibrator::updateValues()
 
 
     cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(numDisparties,blockSize);
+
+    cv::Ptr<cv::ximgproc::DisparityWLSFilter> wls_filter;
+    wls_filter = cv::ximgproc::createDisparityWLSFilter(sbm);
+
     sbm->setDisp12MaxDiff(dispMaxDiff);
     sbm->setSpeckleRange(speckleRange);
     sbm->setSpeckleWindowSize(speckleWindowSize);
@@ -89,10 +104,39 @@ void DepthMapCalibrator::updateValues()
     sbm->setMinDisparity(minDispartity);
     sbm->setPreFilterCap(preFilterCap);
     sbm->setPreFilterSize(preFilterSize);
+
+    cv::Ptr<cv::StereoMatcher> right_matcher = cv::ximgproc::createRightMatcher(sbm);
+
     sbm->compute(leftGray,rightGray,disparity_left);
-    normalize(disparity_left, disp8, 0, 255, CV_MINMAX, CV_8U);
+    right_matcher->compute(rightGray,leftGray, disparity_right);
+
+    double lambda = 8000.0;   // hardcode
+    double sigma = 1.5;       // hardcode
+
+    //! [filtering]
+    wls_filter->setLambda(lambda);
+    wls_filter->setSigmaColor(sigma);
+
+    wls_filter->filter(disparity_left, leftImage, filtered_disp, disparity_right);
+
+    conf_map = wls_filter->getConfidenceMap();
+
+    ROI = wls_filter->getROI();
+
+    cv::Mat raw_disp_vis;
+    cv::ximgproc::getDisparityVis(disparity_left,raw_disp_vis, 2.0);
+    cv::Mat filtered_disp_vis;
+    cv::ximgproc::getDisparityVis(filtered_disp,filtered_disp_vis, 5.0);
+
+    //normalize(disparity_left, disp8, 0, 255, CV_MINMAX, CV_8U);
+    normalize(raw_disp_vis, disp8, 0, 255, CV_MINMAX, CV_8U);
+
+
     cv::imshow("testL", leftImageUndistorted);
     cv::imshow("testR", rightImageUndistorted);
-    cv::imshow("depthMap", disp8);
-    cv::waitKey();
+    cv::imshow("depthMap1", raw_disp_vis);
+
+    cv::imshow("depthMap2", filtered_disp_vis);
+    cv::imshow("depthMap3", disp8);
+
 }
