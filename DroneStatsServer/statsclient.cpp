@@ -170,6 +170,9 @@ void StatsClient::connectToDroneServer(std::string ip)
                         b = m.i[0] == 1;
                         emit transmitOnboardVideoCaptureStatus(b);
                         break;
+                    case SystemMessage::FPS_COUNTER:
+                        fps = m.i[0];
+                        break;
                     default:
                         break;
                 }
@@ -188,7 +191,7 @@ void StatsClient::connectToDroneServer(std::string ip)
                 std::memcpy(&m,msg , sizeof(m));
                 int64 now =std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 //std::cout<<"ping: "<<m.time[0]<<"-_-"<<m.time[1]<<"-_-"<<now<<std::endl;
-                QString q = "PING(milliseconds):\nTo Raspberry: " + QString::number(m.time[1] - m.time[0]) + "\n" + "From Raspberry: " + QString::number(now - m.time[1]);
+                QString q = "FPS: " + QString::number(fps)+"  \nPING(milliseconds):\nTo Raspberry: " + QString::number(m.time[1] - m.time[0]) + "\n" + "From Raspberry: " + QString::number(now - m.time[1]);
                 emit transmitPing( q);
             }
         }

@@ -13,6 +13,8 @@ public:
     OdometryModule(CameraModule* _camModule);
     OdometryModule();
     void startThread();
+    double fps = 0;
+
 private:
     CameraModule* camModule;
     AsyncVar<bool> threadActive{true};

@@ -41,7 +41,7 @@ struct MessageWithGrayImage {                                           //get im
 };
 
 struct SystemMessage {
-    enum Type {START_VIDEO_STREAM, VIDEO_STREAM_STATUS, VIDEO_CAPTURE_STATUS, START_IMAGE_CAPTURE, STOP_IMAGE_CAPTURE, STOP_VIDEO_STREAM, TEXT_ALLERT};
+    enum Type {START_VIDEO_STREAM, VIDEO_STREAM_STATUS, VIDEO_CAPTURE_STATUS, START_IMAGE_CAPTURE, STOP_IMAGE_CAPTURE, STOP_VIDEO_STREAM, TEXT_ALLERT, FPS_COUNTER};
     char text[200];
     int i[8];
     Type type;

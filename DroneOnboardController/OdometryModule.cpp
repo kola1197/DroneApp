@@ -159,7 +159,7 @@ void OdometryModule::updateCoordinats()         //try mono
     std::chrono::microseconds timeOnTheEnd = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     double delta_time = (timeOnTheEnd - timeOnStart).count();
     double avg_delta = (prev_delta + prev_prev_delta + delta_time) / 3;
-    double fps = 1000000/avg_delta;
+    fps = 1000000/avg_delta;
     prev_prev_delta = prev_delta;
     prev_delta = delta_time;
     std::cout<<"FPS: "<<fps<<"   last time - "<<delta_time<<std::endl;

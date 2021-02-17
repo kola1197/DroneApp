@@ -195,6 +195,10 @@ void StatsServer::startServer(){
                 sendImage(camModule.rightImage.getImage(), false, isGrey);
                 testcounter++;
             }
+            SystemMessage s;
+            s.type = SystemMessage::FPS_COUNTER;
+            s.i[0] = odometryModule.fps;
+            sendMessage(s);
             //std::cout<<"images sent "<<testcounter<<std::endl;
         }
     }
