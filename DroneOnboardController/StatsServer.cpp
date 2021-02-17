@@ -262,15 +262,17 @@ void StatsServer::sendAllert(std::string s)
     sendMessage(m);
 }
 
-void StatsServer::sendImage(std::shared_ptr<cv::Mat> image, bool left, bool isGrey)
+void StatsServer::sendImage(std::shared_ptr<cv::Mat> _image, bool left, bool isGrey)
 {
+    cv::Mat image;
+    cv::resize(*_image,image,cv::Size(320,240));
     if (isGrey)
     {
         MessageWithGrayImage m{};
         counter++;
-        m.height = image.get()->size().height;//*image.size().height;
-        m.width = image->size().width;
-        m.dataSize = image->total()*image->elemSize();
+        m.height = image.size().height;//*image.size().height;
+        m.width = image.size().width;
+        m.dataSize = image.total()*image.elemSize();
         std::cout<<"gray size"<<m.dataSize<<std::endl;
         std::string text = "";
         if (left)
@@ -291,15 +293,15 @@ void StatsServer::sendImage(std::shared_ptr<cv::Mat> image, bool left, bool isGr
         }
         for (int i =0;i< m.dataSize;i++)
         {
-            m.imData[i] = image->data[i];
+            m.imData[i] = image.data[i];
         }
         sendMessage(m);
     } else {
         MessageWithImage m{};
         counter++;
-        m.height = image.get()->size().height;//*image.size().height;
-        m.width = image->size().width;
-        m.dataSize = image->total()*image->elemSize();
+        m.height = image.size().height;//*image.size().height;
+        m.width = image.size().width;
+        m.dataSize = image.total()*image.elemSize();
         std::string text = "";
         if (left)
         {
@@ -319,7 +321,7 @@ void StatsServer::sendImage(std::shared_ptr<cv::Mat> image, bool left, bool isGr
         }
         for (int i =0;i< m.dataSize;i++)
         {
-            m.imData[i] = image->data[i];
+            m.imData[i] = image.data[i];
         }
         sendMessage(m);
     }

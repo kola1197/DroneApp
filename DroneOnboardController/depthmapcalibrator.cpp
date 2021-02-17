@@ -25,8 +25,8 @@ void DepthMapCalibrator::updateValues()
 {
     ui->horizontalSlider;
     std::cout<<"Update values"<<std::endl;
-    std::string leftPart = "/home/nickolay/Odometry dataset/dataset/sequences/00/image_0/000000.png";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
-    std::string rightPart = "/home/nickolay/Odometry dataset/dataset/sequences/00/image_1/000000.png";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
+    std::string leftPart = "/home/nickolay/Odometry/left/000000.png";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
+    std::string rightPart = "/home/nickolay/Odometry/right/000000.png";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
 
     cv::Mat leftImage = cv::imread(leftPart);
     cv::Mat rightImage = cv::imread(rightPart);

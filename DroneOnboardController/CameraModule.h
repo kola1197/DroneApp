@@ -23,6 +23,9 @@ public:
     ~CameraModule();
     DroneImage leftImage;
     DroneImage rightImage;
+    DroneImage leftPrevImage;
+    DroneImage rightPrevImage;
+
     bool active();
     int startThread();
     void stopThread();
@@ -30,6 +33,8 @@ public:
     int setTestMode(int i);
     int getTestMode();
     AsyncVar<bool> gotImage{false};
+    AsyncVar<bool> imageForOdometryModuleUpdated{false};
+    AsyncVar<int> frameNum{0};
 
 #ifdef __arm__                                                           //dji modules installed only on raspberry pi
     static int my_callback(int data_type, int data_len, char *content);
@@ -43,6 +48,7 @@ public:
     //const int IMAGE_SIZE = 76800;
 #endif
 private:
+
     MutexBool threadStop{false};
 #ifdef __arm__
     int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
@@ -53,7 +59,6 @@ private:
     std::string dirToSave = "";
     int saveCounter=0;
     MutexBool imageCaptureMode{false};
-
     void saveImages();
 };
 
