@@ -47,6 +47,11 @@ void OdometryModule::startThread()
 void OdometryModule::updateCoordinats()         //try mono
 {
     std::chrono::microseconds timeOnStart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    std::chrono::microseconds timeOnSecondPartb = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    std::chrono::microseconds timeOnSecondPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    std::chrono::microseconds timeOnThirdPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    std::chrono::microseconds timeOnForthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    std::chrono::microseconds timeOnFifthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     //std::cout<<"update coords"<<std::endl;
     int fontFace = cv::FONT_HERSHEY_PLAIN;
     double fontScale = 1;
@@ -66,6 +71,7 @@ void OdometryModule::updateCoordinats()         //try mono
     camModule->leftPrevImage.getImage()->copyTo(prevImage_c); //cv::imread(filename2);
     camModule->leftImage.getImage()->copyTo(currImage_c); //cv::imread(filename2);
     //std::cout<<"update coords 1"<<std::endl;
+    timeOnSecondPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
 
     if ( !currImage_c.data || !prevImage_c.data || prevImage_c.rows == 320 || prevImage_c.rows == 240) {
         std::cout<< " --(!) Error reading images " << std::endl; //return -1;
@@ -104,10 +110,11 @@ void OdometryModule::updateCoordinats()         //try mono
             std::vector<uchar> status;
             std::vector<cv::Point2f> currFeatures;
             featureTracking(prevImage_c, currImage_c, prevFeatures, currFeatures, status);
+            timeOnSecondPartb = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
 
             E = findEssentialMat(currFeatures, prevFeatures, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
             recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
-
+            timeOnThirdPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
 //            if (!R_f.data){
 //                R_f = R.clone();
 //                t_f = t.clone();
@@ -122,7 +129,7 @@ void OdometryModule::updateCoordinats()         //try mono
                 currPts.at<double>(1,i) = currFeatures.at(i).y;
             }
             scale = 1.0;
-
+            timeOnForthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
             scale = getAbsoluteScale(frameNum, 0, t.at<double>(2));
             if ((scale>0.1)&&(t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))) {
 
@@ -141,7 +148,7 @@ void OdometryModule::updateCoordinats()         //try mono
             prevImage = currImage.clone();
             prevFeatures = currFeatures;
 
-
+            timeOnFifthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
             int x = int(t_f.at<double>(0)) + 300;
             int y = int(t_f.at<double>(2)) + 100;
             circle(traj, cv::Point(x, y) ,1, CV_RGB(255,0,0), 2);
@@ -153,16 +160,25 @@ void OdometryModule::updateCoordinats()         //try mono
             //imshow( "Road facing camera", currImage_c );
             imshow( "Trajectory", traj );
             std::cout<<text<<std::endl;
-                        //cv::waitKey(1);
+            cv::waitKey(1);
         }
     }
+
     std::chrono::microseconds timeOnTheEnd = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+
     double delta_time = (timeOnTheEnd - timeOnStart).count();
     double avg_delta = (prev_delta + prev_prev_delta + delta_time) / 3;
     fps = 1000000/avg_delta;
     prev_prev_delta = prev_delta;
     prev_delta = delta_time;
     std::cout<<"FPS: "<<fps<<"   last time - "<<delta_time<<std::endl;
+
+    double firstPart = (timeOnSecondPart - timeOnStart).count();
+    double secondPart = (timeOnSecondPartb - timeOnSecondPart).count();
+    double thirdPart =  (timeOnThirdPart - timeOnSecondPartb).count();
+    double forthPart = (timeOnForthPart - timeOnThirdPart).count();
+    double fifthPart = (timeOnFifthPart - timeOnForthPart).count();
+    std::cout<<"Time frames: 1)" <<firstPart<<" 2) "<<secondPart<<" 3) "<<thirdPart<<" 4) "<<forthPart<<" 5) "<<fifthPart<<std::endl;
 
 }
 
@@ -208,7 +224,7 @@ void OdometryModule::featureTracking(cv::Mat img_1, cv::Mat img_2, std::vector<c
 //this function automatically gets rid of points for which tracking fails
 
     std::vector<float> err;
-    cv::Size winSize = cv::Size(21,21);
+    cv::Size winSize = cv::Size(7,7);
     cv::TermCriteria termcrit = cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01);
 
     calcOpticalFlowPyrLK(img_1, img_2, points1, points2, status, err, winSize, 3, termcrit, 0, 0.001);
