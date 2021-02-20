@@ -395,6 +395,7 @@ void StatsClient::getSystemMessage()
         case SystemMessage::COORDINATES:
             //CvPoint3D32f point(m.f[0],m.f[1],m.f[2]);
             emit transmitCoordinates(CvPoint3D32f(m.f[0],m.f[1],m.f[2]));
+            //std::cout<<"Point x:"<<m.f[0]<<" y:"<<m.f[1]<<" z:"<<m.f[2]<<std::endl;
             break;
         default:
             break;

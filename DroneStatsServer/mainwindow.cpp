@@ -56,7 +56,7 @@ void MainWindow::setTestImage()
 
 void MainWindow::getCoordinatespoint(CvPoint3D32f point) {
     ui->sysLabel->setText("Point x:"+QString::number(point.x)+" y:"+QString::number(point.y)+" z:"+QString::number(point.z));
-    //ui->openGLWidget->getCoordinatespoint(point);
+    ui->openGLWidget->getCoordinatespoint(point);
 }
 
 void MainWindow::setPing(QString q)
