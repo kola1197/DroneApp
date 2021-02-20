@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1245</width>
+    <height>742</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Info:</string>
+     <string>leftImage</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -33,30 +33,14 @@
    <widget class="QLabel" name="rightImageLabel">
     <property name="geometry">
      <rect>
-      <x>420</x>
+      <x>910</x>
       <y>70</y>
       <width>320</width>
       <height>240</height>
      </rect>
     </property>
     <property name="text">
-     <string>Info:</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="infoLabel">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>340</y>
-      <width>221</width>
-      <height>171</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Info: NOT CONNECTED TO PX</string>
+     <string>rightImage</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -66,8 +50,8 @@
     <property name="geometry">
      <rect>
       <x>60</x>
-      <y>40</y>
-      <width>681</width>
+      <y>20</y>
+      <width>1191</width>
       <height>17</height>
      </rect>
     </property>
@@ -78,82 +62,140 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QPushButton" name="connectButton">
+   <widget class="QFrame" name="frame">
     <property name="geometry">
      <rect>
-      <x>600</x>
-      <y>380</y>
-      <width>161</width>
-      <height>31</height>
+      <x>10</x>
+      <y>450</y>
+      <width>491</width>
+      <height>231</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Connect</string>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QLabel" name="infoLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>221</width>
+       <height>191</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Info: NOT CONNECTED TO PX</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="infoLabelRPI">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>20</y>
+       <width>221</width>
+       <height>191</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Not connected to raspberry</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QOpenGLWidget" name="openGLWidget">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>70</y>
+      <width>461</width>
+      <height>241</height>
+     </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="getImageStreamButton">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
+   <widget class="QFrame" name="frame_2">
     <property name="geometry">
      <rect>
-      <x>600</x>
-      <y>430</y>
-      <width>161</width>
-      <height>31</height>
+      <x>650</x>
+      <y>450</y>
+      <width>581</width>
+      <height>231</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Turn on video</string>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
     </property>
-   </widget>
-   <widget class="QPushButton" name="onBoardVideoCapture">
-    <property name="enabled">
-     <bool>false</bool>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
     </property>
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>480</y>
-      <width>161</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Record video on board </string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="ipEdit">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>340</y>
-      <width>161</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>127.0.0.1</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="infoLabelRPI">
-    <property name="geometry">
-     <rect>
-      <x>320</x>
-      <y>340</y>
-      <width>221</width>
-      <height>171</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Not connected to raspberry</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-    </property>
+    <widget class="QLineEdit" name="ipEdit">
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>30</y>
+       <width>161</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>127.0.0.1</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="getImageStreamButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>120</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Turn on video</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="connectButton">
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>70</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Connect</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="onBoardVideoCapture">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>400</x>
+       <y>170</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Record video on board </string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -161,7 +203,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1245</width>
      <height>22</height>
     </rect>
    </property>
