@@ -154,6 +154,7 @@ void OdometryModule::updateCoordinats()         //try mono
             circle(traj, cv::Point(x, y) ,1, CV_RGB(255,0,0), 2);
 
             rectangle( traj, cv::Point(10, 30), cv::Point(550, 50), CV_RGB(0,0,0), CV_FILLED);
+            coordinates.set(CvPoint3D32f(t_f.at<double>(0),t_f.at<double>(1),t_f.at<double>(2)));
             sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2));
             putText(traj, text, textOrg, fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
             std::cout<<text<<std::endl;

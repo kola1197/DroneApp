@@ -5,7 +5,9 @@
 #ifndef DRONEAPP_ODOMETRYMODULE_H
 #define DRONEAPP_ODOMETRYMODULE_H
 
-#include "StatsServer.h"
+//#include "StatsServer.h"
+#include <cv.h>
+#include "CameraModule.h"
 #include "../Utils/AsyncVar.h"
 
 class OdometryModule {
@@ -14,8 +16,10 @@ public:
     OdometryModule();
     void startThread();
     double fps = 0;
+    AsyncVar<CvPoint3D32f> coordinates;
 
 private:
+
     CameraModule* camModule;
     AsyncVar<bool> threadActive{true};
     void updateCoordinats();

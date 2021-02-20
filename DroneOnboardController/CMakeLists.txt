@@ -50,7 +50,7 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
         OdometryModule.h
         ../Utils/AsyncVar.h
         ../Utils/AsyncVar.cpp
-    )
+            Settings.cpp Settings.h)
     #find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
 ELSE()
@@ -81,7 +81,7 @@ ELSE()
         #dmcalibrator.cpp
         #mcalibrator.h
 
-    )
+            Settings.cpp Settings.h)
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} pthread)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()

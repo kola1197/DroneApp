@@ -7,12 +7,14 @@
 
 
 #include <opencv2/core/hal/interface.h>
+#include <string>
 
-//enum Type { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY, SET_IMAGE_SEND_MODE };
+//enum MessageType { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY, SET_IMAGE_SEND_MODE };
+enum MessageType {TEST_MESSAGE, MESSAGE_WITH_IMAGE, MESSAGE_WITH_GRAY_IMAGE, SYSTEM_MESSAGE, PING_MESSAGE, COMMAND_MESSAGE, SETTINGS_MESSAGE};
 
 struct HarbingerMessage {                                           //sends before other messages, to set resiver to it
-    enum Type {TEST_MESSAGE, MESSAGE_WITH_IMAGE, MESSAGE_WITH_GRAY_IMAGE, SYSTEM_MESSAGE, PING_MESSAGE};
-    Type type;
+    //enum MessageType {TEST_MESSAGE, MESSAGE_WITH_IMAGE, MESSAGE_WITH_GRAY_IMAGE, SYSTEM_MESSAGE, PING_MESSAGE};
+    MessageType type;
     int code;
 };
 
@@ -41,9 +43,10 @@ struct MessageWithGrayImage {                                           //get im
 };
 
 struct SystemMessage {
-    enum Type {START_VIDEO_STREAM, VIDEO_STREAM_STATUS, VIDEO_CAPTURE_STATUS, START_IMAGE_CAPTURE, STOP_IMAGE_CAPTURE, STOP_VIDEO_STREAM, TEXT_ALLERT, FPS_COUNTER};
+    enum Type {START_VIDEO_STREAM, VIDEO_STREAM_STATUS, VIDEO_CAPTURE_STATUS, START_IMAGE_CAPTURE, STOP_IMAGE_CAPTURE, STOP_VIDEO_STREAM, TEXT_ALLERT, FPS_COUNTER, COORDINATES};
     char text[200];
     int i[8];
+    float f[3];
     Type type;
 };
 
@@ -51,8 +54,58 @@ struct PingMessage{
     int64 time[2];
 };
 
-class Messages {
+struct CommandMessage{
+    enum Type{};
+    char text[200];
+    int i[9];
+};
 
+struct SettingsMessage{
+    enum Type{};
+    char text[200];
+    int i[9];
+};
+
+class Messages {
+public:
+    static bool getMessageTypeByName(std::string name,MessageType * type) {
+        if (name == typeid(SystemMessage).name())
+        {
+            *type = MessageType::SYSTEM_MESSAGE;
+            return true;
+        }
+        if (name == typeid(MessageWithImage).name())
+        {
+            *type = MessageType::MESSAGE_WITH_IMAGE;
+            return true;
+        }
+        if (name == typeid(MessageWithGrayImage).name())
+        {
+            *type = MessageType::MESSAGE_WITH_GRAY_IMAGE;
+            return true;
+        }
+        if (name == typeid(PingMessage).name())
+        {
+            *type = MessageType::PING_MESSAGE;
+            return true;
+        }
+        if (name == typeid(SettingsMessage).name())
+        {
+            *type = MessageType::SETTINGS_MESSAGE;
+            return true;
+        }
+        if (name == typeid(CommandMessage).name())
+        {
+            *type = MessageType::COMMAND_MESSAGE;
+            return true;
+        }
+        /*if (name == typeid(TestMessage).name())
+        {
+            *type = MessageType::TEST_MESSAGE;
+            return true;
+        }*/
+        return false;
+    }
 };
 
 

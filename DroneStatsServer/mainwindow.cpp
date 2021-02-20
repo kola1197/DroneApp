@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    qRegisterMetaType<CvPoint3D32f>("CvPoint3D32f");             //now we can use this messages in signal/slot system as QObjects
     connect(&client,SIGNAL(transmit_to_gui(QString)),this,SLOT(setWarningText(QString)));
     connect(&client,SIGNAL(transmit_to_left_image(QImage)),this,SLOT(setLeftImage(QImage)));
     connect(&client,SIGNAL(transmit_to_right_image(QImage)),this,SLOT(setRightImage(QImage)));
@@ -17,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitVideoStreamStatus(bool)),this,SLOT(setVideoStreamMode(bool)));
     connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
     connect(&client,SIGNAL(transmitPing(QString)),this,SLOT(setPing(QString)));
-
+    connect(&client,SIGNAL(transmitCoordinates(CvPoint3D32f)),this,SLOT(getCoordinatespoint(CvPoint3D32f)));
 
     std::thread thr([this]()
                     {
@@ -51,6 +52,11 @@ void MainWindow::setTestImage()
     pic = pic.scaled(320,240);
     ui->leftImageLabel->setPixmap(pic);
     ui->rightImageLabel->setPixmap(pic);
+}
+
+void MainWindow::getCoordinatespoint(CvPoint3D32f point) {
+    ui->sysLabel->setText("Point x:"+QString::number(point.x)+" y:"+QString::number(point.y)+" z:"+QString::number(point.z));
+    //ui->openGLWidget->getCoordinatespoint(point);
 }
 
 void MainWindow::setPing(QString q)

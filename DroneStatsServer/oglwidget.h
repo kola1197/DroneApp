@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QOpenGLWidget>
+#include <mutex>
+#include <cv.h>
 
 class OGLWidget : public QOpenGLWidget
  {
@@ -16,6 +18,11 @@ public:
     void mousePressEvent(QMouseEvent *event);
     //oglFont *glFont;
     void renderText(double x, double y, const QString &str, bool bold = false, QColor color = Qt::black);
+    void getCoordinatespoint(CvPoint3D32f point);
+
+private:
+    std::mutex pointsMutex;
+    std::vector<CvPoint3D32f> points;
 protected:
     void initializeGL();
     void resizeGL(int w, int h);

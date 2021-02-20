@@ -94,8 +94,9 @@ void StatsServer::startServer(){
     std::thread thr([this]()
     {
         std::cout<<"reading messages"<<std::endl;
-        while (true) {
-            HarbingerMessage h;
+        while (!serverStop.get()) {
+            getMessage();
+            /*HarbingerMessage h;
             char hmsg[sizeof (h)];
             int hbytes;
             for (int i = 0; i < sizeof(h); i += hbytes) {
@@ -103,7 +104,7 @@ void StatsServer::startServer(){
                     std::cout<<"error"<<std::endl;
             }
             std::memcpy(&h,hmsg , sizeof(h));
-            if (h.type == HarbingerMessage::MESSAGE_WITH_IMAGE)
+            if (h.type == MESSAGE_WITH_IMAGE)
             {
                 MessageWithImage m;
                 char msg[sizeof (m)];
@@ -115,7 +116,7 @@ void StatsServer::startServer(){
                 std::memcpy(&m,msg , sizeof(m));
                 std::cout<<"got MESSAGE_WITH_IMAGE on vehicle. Check Server";
             }
-            if (h.type == HarbingerMessage::SYSTEM_MESSAGE)
+            if (h.type == SYSTEM_MESSAGE)
             {
                 SystemMessage m;
                 char msg[sizeof (m)];
@@ -163,7 +164,7 @@ void StatsServer::startServer(){
                         break;
                 }
             }
-            if (h.type == HarbingerMessage::PING_MESSAGE)
+            if (h.type == PING_MESSAGE)
             {
                 PingMessage m;
                 char msg[sizeof (m)];
@@ -177,14 +178,14 @@ void StatsServer::startServer(){
                 //startThreadstd::cout<<"PING"<<std::endl;
                 m.time[1] = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 sendMessage(m);
-            }
+            }*/
         }
     });
     thr.detach();
     int res = camModule.startThread();
     if (res == 0) {
-        OdometryModule odometryModule(&camModule);
-        odometryModule.startThread();
+        odometryModule = new OdometryModule(&camModule);
+        odometryModule->startThread();
         int testcounter = 0;
         while (!stopThread()) {
             if (imageSendMode.get()) {
@@ -195,11 +196,12 @@ void StatsServer::startServer(){
                 sendImage(camModule.rightImage.getImage(), false, isGrey);
                 testcounter++;
             }
-            SystemMessage s;
+            sendCoordinates();
+            SystemMessage s{};
             s.type = SystemMessage::FPS_COUNTER;
-            s.i[0] = odometryModule.fps;
+            s.i[0] = (int)odometryModule->fps;
             sendMessage(s);
-            //std::cout<<"images sent "<<testcounter<<std::endl;
+            //std::cout<<"images sent "<<testcounter<<std::end;
         }
     }
     else{
@@ -231,6 +233,160 @@ void StatsServer::startServer(){
 
 }
 
+void StatsServer::sendCoordinates()
+{
+    SystemMessage s{};
+    s.type = SystemMessage::COORDINATES;
+    CvPoint3D32f point = odometryModule->coordinates.get();
+    s.f[0] = point.x;
+    s.f[1] = point.y;
+    s.f[2] = point.z;
+    sendMessage(s);
+}
+
+void StatsServer::getMessage()
+{
+
+    HarbingerMessage h;
+    char hmsg[sizeof (h)];
+    int hbytes;
+    for (int i = 0; i < sizeof(h); i += hbytes) {
+        if ((hbytes = recv(sock, hmsg +i, sizeof(h)  - i, 0)) == -1){
+            //std::cout<<"error"<<std::endl;
+            //errorServerStop();
+        }
+    }
+    std::memcpy(&h,hmsg , sizeof(h));
+    switch (h.type) {
+        case SYSTEM_MESSAGE:
+            getSystemMessage();
+            break;
+        case MESSAGE_WITH_GRAY_IMAGE:
+            getMessageWithGrayImage();
+            break;
+        case MESSAGE_WITH_IMAGE:
+            getMessageWithColorImage();
+            break;
+        case PING_MESSAGE:
+            getPingMessage();
+            break;
+        case COMMAND_MESSAGE:
+            getCommandMessage();
+        case SETTINGS_MESSAGE:
+            getSettingsMessage();
+        default:
+            break;
+    }
+}
+
+void StatsServer::getSettingsMessage(){
+    SettingsMessage m;
+    char msg[sizeof (m)];
+    int bytes;
+    for (int i = 0; i < sizeof(m); i += bytes) {
+        if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+            std::cout<<"error"<<std::endl;
+    }
+    std::memcpy(&m,msg , sizeof(m));
+}
+
+void StatsServer::getCommandMessage(){
+    CommandMessage m;
+    char msg[sizeof (m)];
+    int bytes;
+    for (int i = 0; i < sizeof(m); i += bytes) {
+        if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+            std::cout<<"error"<<std::endl;
+    }
+    std::memcpy(&m,msg , sizeof(m));
+}
+
+void StatsServer::getSystemMessage(){
+    SystemMessage m;
+    char msg[sizeof (m)];
+    int bytes;
+    for (int i = 0; i < sizeof(m); i += bytes) {
+        if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+            std::cout<<"error"<<std::endl;
+    }
+    std::memcpy(&m,msg , sizeof(m));
+    std::cout<<"got SYSTEM_MESSAGE::"<<m.type<<": "<<m.text<<std::endl;
+    SystemMessage answer;
+    switch (m.type){
+        case SystemMessage::TEXT_ALLERT:
+            std::cout<<m.text<<std::endl;
+            break;
+        case SystemMessage::START_VIDEO_STREAM:
+            std::cout<<"Starting send video"<<std::endl;
+            imageSendMode.set(true);
+            answer.type = SystemMessage::VIDEO_STREAM_STATUS;
+            answer.i[0] = 1;
+            sendMessage(answer);
+            break;
+        case SystemMessage::STOP_VIDEO_STREAM:
+            std::cout<<"Stop sending video"<<std::endl;
+            imageSendMode.set(false);
+            answer.type = SystemMessage::VIDEO_STREAM_STATUS;
+            answer.i[0] = 0;
+            sendMessage(answer);
+            break;
+        case SystemMessage::START_IMAGE_CAPTURE:
+            camModule.setImageCaptureMode(true);
+            answer.type = SystemMessage::VIDEO_CAPTURE_STATUS;
+            answer.i[0] = 1;
+            sendMessage(answer);
+            sendAllert("Start recording");
+            break;
+        case SystemMessage::STOP_IMAGE_CAPTURE:
+            camModule.setImageCaptureMode(false);
+            answer.type = SystemMessage::VIDEO_CAPTURE_STATUS;
+            answer.i[0] = 0;
+            sendMessage(answer);
+            sendAllert("Recording stopped");
+            break;
+        default:
+            break;
+    }
+}
+
+void StatsServer::getMessageWithGrayImage(){
+    MessageWithGrayImage m;
+    char msg[sizeof (m)];
+    int bytes;
+    for (int i = 0; i < sizeof(m); i += bytes) {
+        if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+            std::cout<<"error"<<std::endl;
+    }
+    std::memcpy(&m,msg , sizeof(m));
+    std::cout<<"got MESSAGE_WITH_GREY_IMAGE on vehicle. Check Server";
+}
+
+void StatsServer::getMessageWithColorImage(){
+    MessageWithImage m;
+    char msg[sizeof (m)];
+    int bytes;
+    for (int i = 0; i < sizeof(m); i += bytes) {
+        if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
+            std::cout<<"error"<<std::endl;
+    }
+    std::memcpy(&m,msg , sizeof(m));
+    std::cout<<"got MESSAGE_WITH_IMAGE on vehicle. Check Server";
+}
+
+void StatsServer::getPingMessage(){
+    PingMessage m;
+    char msg[sizeof (m)];
+    int bytes;
+    for (int i = 0; i < sizeof(m); i += bytes) {
+        if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
+            std::cout<<"error"<<std::endl;
+        }
+    }
+    std::memcpy(&m, msg, sizeof(m));
+    //startThreadstd::cout<<"PING"<<std::endl;
+    m.time[1] = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    sendMessage(m);
+}
 
 //todo add mutex
 bool StatsServer::stopThread()
@@ -334,10 +490,10 @@ void StatsServer::sendImage(std::shared_ptr<cv::Mat> _image, bool left, bool isG
 
 
 
-void StatsServer::sendMessage(SystemMessage m)
+/*void StatsServer::sendMessage(SystemMessage m)
 {
     HarbingerMessage h;
-    h.type = HarbingerMessage::SYSTEM_MESSAGE;
+    h.type = SYSTEM_MESSAGE;
     h.code = 239;
     sendMutex.lock();
     send(sock, &h, sizeof(h), 0);
@@ -349,7 +505,7 @@ void StatsServer::sendMessage(SystemMessage m)
 void StatsServer::sendMessage(MessageWithImage m)
 {
     HarbingerMessage h;
-    h.type = HarbingerMessage::MESSAGE_WITH_IMAGE;
+    h.type = MESSAGE_WITH_IMAGE;
     h.code = 239;
     sendMutex.lock();
     send(sock, &h, sizeof(h), 0);
@@ -360,7 +516,7 @@ void StatsServer::sendMessage(MessageWithImage m)
 void StatsServer::sendMessage(MessageWithGrayImage m)
 {
     HarbingerMessage h;
-    h.type = HarbingerMessage::MESSAGE_WITH_GRAY_IMAGE;
+    h.type = MESSAGE_WITH_GRAY_IMAGE;
     h.code = 239;
     sendMutex.lock();
     send(sock, &h, sizeof(h), 0);
@@ -371,12 +527,12 @@ void StatsServer::sendMessage(MessageWithGrayImage m)
 void StatsServer::sendMessage(PingMessage m)
 {
     HarbingerMessage h;
-    h.type = HarbingerMessage::PING_MESSAGE;
+    h.type = PING_MESSAGE;
     h.code = 239;
     sendMutex.lock();
     send(sock, &h, sizeof(h), 0);
     send(sock, &m, sizeof(m), 0);
     sendMutex.unlock();
-}
+}*/
 
 #pragma clang diagnostic pop

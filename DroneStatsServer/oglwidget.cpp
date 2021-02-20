@@ -38,7 +38,19 @@ void OGLWidget::paintGL()
 {
 
     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    pointsMutex.lock();
+    GLfloat fSizes [2];
+    glGetFloatv(GL_LINE_WIDTH_RANGE,fSizes);
+    GLfloat fCurrentSize = fSizes[0];
+    fCurrentSize+=3.0f;
+    glLineWidth(fCurrentSize);
+    glBegin(GL_LINE_LOOP);
+    glColor3f(1.0, 0.56, 0.0);
+    for(auto point : points){
+        glVertex3f(point.x,point.y,point.z);
+    }
+    glEnd();
+    pointsMutex.unlock();
 }
 
 
@@ -99,3 +111,10 @@ void OGLWidget::mouseDoubleClickEvent(QMouseEvent *event)
 
 }
 
+void OGLWidget::getCoordinatespoint(CvPoint3D32f point)
+{
+    pointsMutex.lock();
+    points.push_back(point);
+    pointsMutex.unlock();
+    repaint();
+}

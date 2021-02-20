@@ -32,6 +32,7 @@ private slots:
     void on_connectButton_released();
     void on_getImageStreamButton_pressed();
     void on_onBoardVideoCapture_released();
+    void getCoordinatespoint(CvPoint3D32f point);
 
 private:
     Ui::MainWindow *ui;
