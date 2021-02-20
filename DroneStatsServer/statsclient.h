@@ -52,6 +52,7 @@ private:
     void sendAllert(std::string s);
     void errorServerStop();
     void sendMessage(PingMessage m);
+    double fps = 0;
 };
 
 #endif // STATSCLIENT_H

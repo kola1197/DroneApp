@@ -51,8 +51,8 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
         ../Utils/AsyncVar.h
         ../Utils/AsyncVar.cpp
     )
-    find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
-    target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
+    #find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
+    #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
 ELSE()
     message("-- x64 architecture detected")
     #set(CMAKE_AUTOUIC ON)
