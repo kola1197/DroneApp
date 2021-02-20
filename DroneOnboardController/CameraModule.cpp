@@ -36,8 +36,8 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
             cv::Mat frame;
             cv::Mat out;
-            std::string leftPart = "/home/nickolay/Odometry Dataset/image_0/";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
-            std::string rightPart = "/home/nickolay/Odometry Dataset/image_0/";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
+            std::string leftPart = "/home/nickolay/Odometry dataset/dataset/sequences/00/image_0/";//"/home/nickolay/Odometry Dataset/image_0/";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/0/";
+            std::string rightPart = "/home/nickolay/Odometry dataset/dataset/sequences/00/image_0/";//"/home/nickolay/Odometry Dataset/image_0/";//"/home/nickolay/Documents/DatasetsOdometry/currentTestData/1/";
             //std::string leftPart = "/home/nickolay/test.jpg";
             //std::string rightPart = "/home/nickolay/test.jpg";
 

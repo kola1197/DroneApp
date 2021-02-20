@@ -36,6 +36,7 @@ ENDIF ()
 #            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libssl.so)
 #    endif()
 #endif()
+find_package(OpenGL REQUIRED)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
@@ -47,6 +48,8 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     mainwindow.ui
     statsclient.cpp
     statsclient.h
+    oglwidget.cpp
+    oglwidget.h
     ../Utils/MutexBool.cpp
     ../Utils/MutexBool.h
     ../Utils/Messages.cpp
@@ -54,4 +57,4 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
   )
 
 
-target_link_libraries(DroneStatsServer PRIVATE Qt5::Widgets ${OpenCV_LIBS} )
+target_link_libraries(DroneStatsServer PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${OPENGL_LIBRARIES})

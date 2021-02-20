@@ -110,12 +110,12 @@
      </property>
     </widget>
    </widget>
-   <widget class="QOpenGLWidget" name="openGLWidget">
+   <widget class="OGLWidget" name="openGLWidget">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>410</x>
       <y>70</y>
-      <width>461</width>
+      <width>481</width>
       <height>241</height>
      </rect>
     </property>
@@ -210,6 +210,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>OGLWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>oglwidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

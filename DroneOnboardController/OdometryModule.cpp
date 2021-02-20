@@ -186,7 +186,7 @@ double OdometryModule::getAbsoluteScale(int frame_id, int sequence_id, double z_
 
     std::string line;
     int i = 0;
-    std::ifstream myfile ("/home/nickolay/Odometry Dataset//00.txt");
+    std::ifstream myfile ("/home/nickolay/Odometry dataset//00.txt");
     double x =0, y=0, z = 0;
     double x_prev, y_prev, z_prev;
     if (myfile.is_open())
