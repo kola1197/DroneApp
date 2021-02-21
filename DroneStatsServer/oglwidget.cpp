@@ -71,7 +71,7 @@ void OGLWidget::paintGL()
         iii++;
     }
     glEnd();
-    std::cout<<"repaint "<<iii<<" points"<<std::endl;
+    //std::cout<<"repaint "<<iii<<" points"<<std::endl;
     pointsMutex.unlock();
 }
 

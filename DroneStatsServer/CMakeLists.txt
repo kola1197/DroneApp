@@ -54,7 +54,7 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
     ../Utils/MutexBool.h
     ../Utils/Messages.cpp
     ../Utils/Messages.h
-  )
+          VehicleData.cpp VehicleData.h)
 
 
 target_link_libraries(DroneStatsServer PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${OPENGL_LIBRARIES})

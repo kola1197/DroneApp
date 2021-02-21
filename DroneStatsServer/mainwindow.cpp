@@ -1,5 +1,6 @@
 #include <thread>
 #include <zconf.h>
+#include <QMessageBox>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "iostream"
@@ -19,7 +20,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
     connect(&client,SIGNAL(transmitPing(QString)),this,SLOT(setPing(QString)));
     connect(&client,SIGNAL(transmitCoordinates(CvPoint3D32f)),this,SLOT(getCoordinatespoint(CvPoint3D32f)));
-
     std::thread thr([this]()
                     {
                         int cnt = 0;
@@ -38,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
                         }
                     });
     thr.detach();
+
+    checkTargetPosition();
 }
 
 MainWindow::~MainWindow()
@@ -169,4 +171,93 @@ void MainWindow::setVideoStreamMode(bool mode)
         ui->getImageStreamButton->setText("Turn on video");
     }
 
+}
+
+void MainWindow::onnnTargetXEditingFinished()
+{
+    checkTargetPosition();
+}
+
+void MainWindow::onnnTargetYEditingFinished()
+{
+    checkTargetPosition();
+}
+
+void MainWindow::onnnTargetZEditingFinished()
+{
+    checkTargetPosition();
+}
+
+void MainWindow::checkTargetPosition() {
+    bool xOk = false;
+    float x = ui->targetX->text().toFloat(&xOk);
+
+    bool yOk = false;
+    float y = ui->targetY->text().toFloat(&yOk);
+
+    bool zOk = false;
+    float z = ui->targetZ->text().toFloat(&zOk);
+
+    if (!xOk) {
+        ui->targetX->setStyleSheet(
+                "QLineEdit { background: rgb(255, 65, 65); selection-background-color: rgb(233, 99, 0); }");
+    } else {
+        ui->targetX->setStyleSheet(
+                "QLineEdit { background: rgb(255, 255, 255); selection-background-color: rgb(233, 99, 0); }");
+    }
+    if (!yOk) {
+        ui->targetY->setStyleSheet(
+                "QLineEdit { background: rgb(255, 65, 65); selection-background-color: rgb(233, 99, 0); }");
+    } else {
+        ui->targetY->setStyleSheet(
+                "QLineEdit { background: rgb(255, 255, 255); selection-background-color: rgb(233, 99, 0); }");
+    }
+    if (!zOk) {
+        ui->targetZ->setStyleSheet(
+                "QLineEdit { background: rgb(255, 65, 65); selection-background-color: rgb(233, 99, 0); }");
+    } else {
+        ui->targetZ->setStyleSheet(
+                "QLineEdit { background: rgb(255, 255, 255); selection-background-color: rgb(233, 99, 0); }");
+    }
+    CvPoint3D32f targetpoint = client.vehicleData.targetpoint.get();
+    if (xOk && yOk && zOk && (x != targetpoint.x || y != targetpoint.y || z != targetpoint.z))
+    {
+        ui->setTargetPointButton->setStyleSheet("QPushButton { background: rgb(255, 65, 65); selection-background-color: rgb(233, 99, 0); }");
+        ui->setTargetPointButton->setEnabled(true);
+    } else{
+        ui->setTargetPointButton->setStyleSheet("QPushButton { background: rgb(65, 255, 65); selection-background-color: rgb(99, 233, 0); }");
+        ui->setTargetPointButton->setEnabled(false);
+    }
+
+
+
+}
+void MainWindow::on_setTargetPointButton_released()
+{
+    bool xOk = false;
+    float x = ui->targetX->text().toFloat(&xOk);
+
+    bool yOk = false;
+    float y = ui->targetY->text().toFloat(&yOk);
+
+    bool zOk = false;
+    float z = ui->targetZ->text().toFloat(&zOk);
+
+    if (xOk && yOk && zOk){
+        if (client.connected.get()){
+            CommandMessage c{};
+            c.type = CommandMessage::SET_TARGET;
+            c.f[0] = x;
+            c.f[1] = y;
+            c.f[2] = z;
+            client.sendMessage(c);
+        }
+        else{
+            QMessageBox msgBox;
+            msgBox.setText("Please connect to vehicle first");
+            msgBox.exec();
+        }
+    } else{
+        checkTargetPosition();
+    }
 }

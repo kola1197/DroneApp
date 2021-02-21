@@ -9,6 +9,7 @@
 
 #include "../Utils/Messages.h"
 #include "../Utils/MutexBool.h"
+#include "VehicleData.h"
 
 /*
 enum MessageType { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY };
@@ -57,10 +58,12 @@ public:
             sendMutex.unlock();
         }
     }
+    VehicleData vehicleData;
     StatsClient();
     void connectToDroneServer(std::string ip);
     //void sendMessage(MessageWithImage m);
     //void sendMessage(SystemMessage m);
+    AsyncVar<bool> connected{false};
     MutexBool closeConnectionThreadBool{false};              //on true closes connection
 signals:
     void transmit_to_gui(QString value);

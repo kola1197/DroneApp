@@ -33,6 +33,12 @@ private slots:
     void on_getImageStreamButton_pressed();
     void on_onBoardVideoCapture_released();
     void getCoordinatespoint(CvPoint3D32f point);
+    void onnnTargetXEditingFinished();
+    void onnnTargetYEditingFinished();
+    void onnnTargetZEditingFinished();
+    void checkTargetPosition();
+
+    void on_setTargetPointButton_released();
 
 private:
     Ui::MainWindow *ui;

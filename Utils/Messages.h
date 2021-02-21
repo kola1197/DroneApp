@@ -55,13 +55,16 @@ struct PingMessage{
 };
 
 struct CommandMessage{
-    enum Type{};
+    enum Type{SET_TARGET};
+    Type type;
     char text[200];
     int i[9];
+    float f[9];
 };
 
 struct SettingsMessage{
     enum Type{};
+    Type type;
     char text[200];
     int i[9];
 };
