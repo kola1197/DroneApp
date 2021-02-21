@@ -42,7 +42,7 @@ void OGLWidget::paintGL()
     GLfloat fSizes [20];
     glGetFloatv(GL_LINE_WIDTH_RANGE,fSizes);
     GLfloat fCurrentSize = fSizes[0];
-    fCurrentSize+=1.0f;
+    fCurrentSize+=0.2f;
     glLineWidth(fCurrentSize);
     glBegin(GL_LINE_LOOP);
     glColor3f(1.0, 0.0, 0.0);
@@ -59,7 +59,7 @@ void OGLWidget::paintGL()
     glVertex3f(0,0,0);
     glVertex3f(0,0,400);
     glEnd();
-    fCurrentSize+=2.0f;
+    fCurrentSize+=2.8f;
     glLineWidth(fCurrentSize);
     glColor3f(1.0, 0.56, 0.0);
     int iii=0;

@@ -9,6 +9,7 @@
 #include <cv.h>
 #include "CameraModule.h"
 #include "../Utils/AsyncVar.h"
+#include "PX4Comannder.h"
 
 class OdometryModule {
 public:
@@ -17,9 +18,9 @@ public:
     void startThread();
     double fps = 0;
     AsyncVar<CvPoint3D32f> coordinates{CvPoint3D32f{0,0,0}};
-    AsyncVar<CvPoint3D32f> targetPoint{CvPoint3D32f{0,0,0}};
+    AsyncVar<CvPoint3D32f> targetPoint{CvPoint3D32f{1,1,0}};
     void setCurrentPointAsZero();
-
+    PX4Comannder px4Commander;
 private:
     AsyncVar<bool> setZero{false};
     CameraModule* camModule;

@@ -6,6 +6,8 @@
 #include "PX4Comannder.h"
 #include <unistd.h>
 
+PX4Comannder::PX4Comannder(){}
+
 void PX4Comannder::startDronekit()
 {
     std::string path = "/usr/bin/python";

@@ -8,10 +8,12 @@
 
 #include <cv.h>
 #include "../Utils/AsyncVar.h"
+enum VehicleMode{QUADROCOPTER = 0, CAR = 1};
 
 class VehicleData {
 public:
     AsyncVar<CvPoint3D32f> targetpoint{CvPoint3D32f{0,0,0}};
+    AsyncVar<VehicleMode> vehicleMode{QUADROCOPTER};
 };
 
 

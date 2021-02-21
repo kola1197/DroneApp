@@ -93,6 +93,10 @@ private:
     void updateTargetPointForGroundStation();
 
     void updateDataForGroundStation();
+
+    void updateVehicleStatusForGroundStation();
+
+    void UpdateSettingsForGroundStation();
 };
 
 

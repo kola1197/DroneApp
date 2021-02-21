@@ -46,6 +46,11 @@ private slots:
 
     void on_SetCurrentPointAsZerroButton_released();
 
+    void on_horizontalSlider_valueChanged(int value);
+
+    void on_horizontalSlider_rangeChanged(int min, int max);
+    void setVehicleModeValue();
+    void setTargetPosition();
 private:
     Ui::MainWindow *ui;
     StatsClient client;
@@ -59,5 +64,6 @@ private:
 
     QImage getLeftImage();
     QImage getRightImage();
+
 };
 #endif // MAINWINDOW_H

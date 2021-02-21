@@ -96,89 +96,6 @@ void StatsServer::startServer(){
         std::cout<<"reading messages"<<std::endl;
         while (!serverStop.get()) {
             getMessage();
-            /*HarbingerMessage h;
-            char hmsg[sizeof (h)];
-            int hbytes;
-            for (int i = 0; i < sizeof(h); i += hbytes) {
-                if ((hbytes = recv(sock, hmsg +i, sizeof(h)  - i, 0)) == -1)
-                    std::cout<<"error"<<std::endl;
-            }
-            std::memcpy(&h,hmsg , sizeof(h));
-            if (h.type == MESSAGE_WITH_IMAGE)
-            {
-                MessageWithImage m;
-                char msg[sizeof (m)];
-                int bytes;
-                for (int i = 0; i < sizeof(m); i += bytes) {
-                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
-                        std::cout<<"error"<<std::endl;
-                }
-                std::memcpy(&m,msg , sizeof(m));
-                std::cout<<"got MESSAGE_WITH_IMAGE on vehicle. Check Server";
-            }
-            if (h.type == SYSTEM_MESSAGE)
-            {
-                SystemMessage m;
-                char msg[sizeof (m)];
-                int bytes;
-                for (int i = 0; i < sizeof(m); i += bytes) {
-                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1)
-                        std::cout<<"error"<<std::endl;
-                }
-                std::memcpy(&m,msg , sizeof(m));
-                std::cout<<"got SYSTEM_MESSAGE::"<<m.type<<": "<<m.text<<std::endl;
-                SystemMessage answer;
-                switch (m.type){
-                    case SystemMessage::TEXT_ALLERT:
-                        std::cout<<m.text<<std::endl;
-                        break;
-                    case SystemMessage::START_VIDEO_STREAM:
-                        std::cout<<"Starting send video"<<std::endl;
-                        imageSendMode.set(true);
-                        answer.type = SystemMessage::VIDEO_STREAM_STATUS;
-                        answer.i[0] = 1;
-                        sendMessage(answer);
-                        break;
-                    case SystemMessage::STOP_VIDEO_STREAM:
-                        std::cout<<"Stop sending video"<<std::endl;
-                        imageSendMode.set(false);
-                        answer.type = SystemMessage::VIDEO_STREAM_STATUS;
-                        answer.i[0] = 0;
-                        sendMessage(answer);
-                        break;
-                    case SystemMessage::START_IMAGE_CAPTURE:
-                        camModule.setImageCaptureMode(true);
-                        answer.type = SystemMessage::VIDEO_CAPTURE_STATUS;
-                        answer.i[0] = 1;
-                        sendMessage(answer);
-                        sendAllert("Start recording");
-                        break;
-                    case SystemMessage::STOP_IMAGE_CAPTURE:
-                        camModule.setImageCaptureMode(false);
-                        answer.type = SystemMessage::VIDEO_CAPTURE_STATUS;
-                        answer.i[0] = 0;
-                        sendMessage(answer);
-                        sendAllert("Recording stopped");
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (h.type == PING_MESSAGE)
-            {
-                PingMessage m;
-                char msg[sizeof (m)];
-                int bytes;
-                for (int i = 0; i < sizeof(m); i += bytes) {
-                    if ((bytes = recv(sock, msg +i, sizeof(m)  - i, 0)) == -1){
-                        std::cout<<"error"<<std::endl;
-                    }
-                }
-                std::memcpy(&m, msg, sizeof(m));
-                //startThreadstd::cout<<"PING"<<std::endl;
-                m.time[1] = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-                sendMessage(m);
-            }*/
         }
     });
     thr.detach();
@@ -186,23 +103,9 @@ void StatsServer::startServer(){
     if (res == 0) {
         odometryModule = new OdometryModule(&camModule);
         odometryModule->startThread();
-        //int testcounter = 0;
+        UpdateSettingsForGroundStation();
         while (!stopThread()) {
             updateDataForGroundStation();
-            /*if (imageSendMode.get()) {
-                //std::cout<<"image sent"<<std::endl;
-                //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
-                bool isGrey = camModule.getTestMode() == 0;
-                sendImage(camModule.leftImage.getImage(), true, isGrey);
-                sendImage(camModule.rightImage.getImage(), false, isGrey);
-                testcounter++;
-            }
-            sendCoordinates();
-            SystemMessage s{};
-            s.type = SystemMessage::FPS_COUNTER;
-            s.i[0] = (int)odometryModule->fps;
-            sendMessage(s);*/
-            //std::cout<<"images sent "<<testcounter<<std::end;
         }
     }
     else{
@@ -309,6 +212,15 @@ void StatsServer::getSettingsMessage(){
             std::cout<<"error"<<std::endl;
     }
     std::memcpy(&m,msg , sizeof(m));
+    switch (m.type) {
+        case SettingsMessage::VEHICLE_MODE:
+            odometryModule->px4Commander.vehicleMode.set((VehicleMode)m.i[0]);
+            updateVehicleStatusForGroundStation();
+            break;
+        default:
+            break;
+
+    }
 }
 
 void StatsServer::getCommandMessage(){
@@ -524,7 +436,7 @@ void StatsServer::sendImage(std::shared_ptr<cv::Mat> _image, bool left, bool isG
 }
 
 void StatsServer::updateTargetPointForGroundStation(){
-    CommandMessage c;
+    CommandMessage c{};
     c.type = CommandMessage::SET_TARGET;
     CvPoint3D32f targetPoint = odometryModule->targetPoint.get();
     c.f[0] = targetPoint.x;
@@ -533,50 +445,18 @@ void StatsServer::updateTargetPointForGroundStation(){
     sendMessage(c);
 }
 
-
-/*void StatsServer::sendMessage(SystemMessage m)
+void StatsServer::updateVehicleStatusForGroundStation()
 {
-    HarbingerMessage h;
-    h.type = SYSTEM_MESSAGE;
-    h.code = 239;
-    sendMutex.lock();
-    send(sock, &h, sizeof(h), 0);
-    //std::cout<<"sizeof m"<< sizeof(m)<<std::endl;
-    send(sock, &m, sizeof(m), 0);
-    sendMutex.unlock();
+    SettingsMessage s{};
+    s.type = SettingsMessage::VEHICLE_MODE;
+    s.i[0] = odometryModule->px4Commander.vehicleMode.get();
+    sendMessage(s);
 }
 
-void StatsServer::sendMessage(MessageWithImage m)
+void StatsServer::UpdateSettingsForGroundStation()
 {
-    HarbingerMessage h;
-    h.type = MESSAGE_WITH_IMAGE;
-    h.code = 239;
-    sendMutex.lock();
-    send(sock, &h, sizeof(h), 0);
-    send(sock, &m, sizeof(m), 0);
-    sendMutex.unlock();
+    updateTargetPointForGroundStation();
+    updateVehicleStatusForGroundStation();
 }
-
-void StatsServer::sendMessage(MessageWithGrayImage m)
-{
-    HarbingerMessage h;
-    h.type = MESSAGE_WITH_GRAY_IMAGE;
-    h.code = 239;
-    sendMutex.lock();
-    send(sock, &h, sizeof(h), 0);
-    send(sock, &m, sizeof(m), 0);
-    sendMutex.unlock();
-}
-
-void StatsServer::sendMessage(PingMessage m)
-{
-    HarbingerMessage h;
-    h.type = PING_MESSAGE;
-    h.code = 239;
-    sendMutex.lock();
-    send(sock, &h, sizeof(h), 0);
-    send(sock, &m, sizeof(m), 0);
-    sendMutex.unlock();
-}*/
 
 #pragma clang diagnostic pop

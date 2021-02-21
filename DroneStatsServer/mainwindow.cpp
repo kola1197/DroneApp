@@ -20,8 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
     connect(&client,SIGNAL(transmitPing(QString)),this,SLOT(setPing(QString)));
     connect(&client,SIGNAL(transmitCoordinates(CvPoint3D32f)),this,SLOT(getCoordinatespoint(CvPoint3D32f)));
-    connect(&client,SIGNAL(transmitTargetpointUpdated()),this,SLOT(checkTargetPosition()));
-
+    connect(&client,SIGNAL(transmitTargetpointUpdated()),this,SLOT(setTargetPosition()));
+    connect(&client,SIGNAL(transmitVehicleModeValue()),this,SLOT(setVehicleModeValue()));
     std::thread thr([this]()
                     {
                         int cnt = 0;
@@ -196,6 +196,13 @@ void MainWindow::onnnTargetZEditingFinished()
     checkTargetPosition();
 }
 
+void MainWindow::setTargetPosition(){
+    ui->targetX->setText(QString::number(client.vehicleData.targetpoint.get().x));
+    ui->targetY->setText(QString::number(client.vehicleData.targetpoint.get().y));
+    ui->targetZ->setText(QString::number(client.vehicleData.targetpoint.get().z));
+    checkTargetPosition();
+}
+
 void MainWindow::checkTargetPosition() {
     bool xOk = false;
     float x = ui->targetX->text().toFloat(&xOk);
@@ -314,4 +321,32 @@ void MainWindow::on_SetCurrentPointAsZerroButton_released()
         msgBox.setText("Please connect to vehicle first");
         msgBox.exec();
     }
+}
+
+void MainWindow::on_horizontalSlider_valueChanged(int value)
+{
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Vehicle mode", "Do you really want to change vehicle mode?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    ui->horizontalSlider->setEnabled(false);
+    if (reply == QMessageBox::Yes) {
+        SettingsMessage s{};
+        s.type = SettingsMessage::VEHICLE_MODE;
+        s.i[0] = value;
+        client.sendMessage(s);
+    } else {
+        setVehicleModeValue();
+    }
+
+}
+
+void MainWindow::setVehicleModeValue()
+{
+    ui->horizontalSlider->setEnabled(true);
+    ui->horizontalSlider->setValue(client.vehicleData.vehicleMode.get());
+}
+
+void MainWindow::on_horizontalSlider_rangeChanged(int min, int max)
+{
+
 }

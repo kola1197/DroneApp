@@ -64,7 +64,7 @@ struct CommandMessage{
 };
 
 struct SettingsMessage{
-    enum Type{};
+    enum Type{VEHICLE_MODE};
     Type type;
     char text[200];
     int i[9];

@@ -102,6 +102,15 @@ void StatsClient::getSettingsMessage(){
             std::cout<<"error"<<std::endl;
     }
     std::memcpy(&m,msg , sizeof(m));
+    switch (m.type) {
+        case SettingsMessage::VEHICLE_MODE:
+            vehicleData.vehicleMode.set((VehicleMode)m.i[0]);
+            emit(transmitVehicleModeValue());
+            break;
+        default:
+            break;
+
+    }
 }
 
 void StatsClient::getCommandMessage(){

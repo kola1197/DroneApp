@@ -75,6 +75,7 @@ signals:
     void transmitCoordinates(CvPoint3D32f point);
     void transmitPing(QString q);
     void transmitTargetpointUpdated();
+    void transmitVehicleModeValue();
 private slots:
     void sendPingRequest();
 private:
