@@ -74,7 +74,7 @@ signals:
     void transmitConnectionStatus(bool connected);
     void transmitCoordinates(CvPoint3D32f point);
     void transmitPing(QString q);
-
+    void transmitTargetpointUpdated();
 private slots:
     void sendPingRequest();
 private:

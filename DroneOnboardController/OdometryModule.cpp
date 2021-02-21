@@ -160,7 +160,7 @@ void OdometryModule::updateCoordinats()         //try mono
             std::cout<<text<<std::endl;
             //imshow( "Road facing camera", currImage_c );
             imshow( "Trajectory", traj );
-            std::cout<<text<<std::endl;
+            //std::cout<<text<<std::endl;
             cv::waitKey(1);
         }
     }
@@ -172,14 +172,14 @@ void OdometryModule::updateCoordinats()         //try mono
     fps = 1000000/avg_delta;
     prev_prev_delta = prev_delta;
     prev_delta = delta_time;
-    std::cout<<"FPS: "<<fps<<"   last time - "<<delta_time<<std::endl;
+    //std::cout<<"FPS: "<<fps<<"   last time - "<<delta_time<<std::endl;
 
     double firstPart = (timeOnSecondPart - timeOnStart).count();
     double secondPart = (timeOnSecondPartb - timeOnSecondPart).count();
     double thirdPart =  (timeOnThirdPart - timeOnSecondPartb).count();
     double forthPart = (timeOnForthPart - timeOnThirdPart).count();
     double fifthPart = (timeOnFifthPart - timeOnForthPart).count();
-    std::cout<<"Time frames: 1)" <<firstPart<<" 2) "<<secondPart<<" 3) "<<thirdPart<<" 4) "<<forthPart<<" 5) "<<fifthPart<<std::endl;
+    //std::cout<<"Time frames: 1)" <<firstPart<<" 2) "<<secondPart<<" 3) "<<thirdPart<<" 4) "<<forthPart<<" 5) "<<fifthPart<<std::endl;
 
 }
 

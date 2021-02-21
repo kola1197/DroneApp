@@ -20,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
     connect(&client,SIGNAL(transmitPing(QString)),this,SLOT(setPing(QString)));
     connect(&client,SIGNAL(transmitCoordinates(CvPoint3D32f)),this,SLOT(getCoordinatespoint(CvPoint3D32f)));
+    connect(&client,SIGNAL(transmitTargetpointUpdated()),this,SLOT(checkTargetPosition()));
+
     std::thread thr([this]()
                     {
                         int cnt = 0;
@@ -73,8 +75,8 @@ void MainWindow::on_connectButton_released()
 
     client.connectToDroneServer(ui->ipEdit->text().toStdString());
     //setConnected(true);
-    ui->getImageStreamButton->setEnabled(true);
-    ui->onBoardVideoCapture->setEnabled(true);
+    //ui->getImageStreamButton->setEnabled(true);
+    //ui->onBoardVideoCapture->setEnabled(true);
 }
 
 void MainWindow::setWarningText(QString text)
@@ -93,6 +95,8 @@ void MainWindow::setConnected(bool b)
 {
     ui->connectButton->setEnabled(!b);
     ui->ipEdit->setEnabled(!b);
+    ui->getImageStreamButton->setEnabled(b);
+    ui->onBoardVideoCapture->setEnabled(b);
 }
 
 void MainWindow::setRightImage(QImage value)

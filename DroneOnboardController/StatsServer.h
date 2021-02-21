@@ -89,6 +89,8 @@ private:
     void getSettingsMessage();
 
     void sendCoordinates();
+
+    void updateTargetPointForGroundStation();
 };
 
 

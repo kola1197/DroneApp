@@ -299,6 +299,15 @@ void StatsServer::getCommandMessage(){
             std::cout<<"error"<<std::endl;
     }
     std::memcpy(&m,msg , sizeof(m));
+    switch (m.type) {
+        case CommandMessage::SET_TARGET:
+            odometryModule->targetPoint.set(CvPoint3D32f{m.f[0],m.f[1],m.f[2]});
+            updateTargetPointForGroundStation();
+            break;
+        default:
+            break;
+
+    }
 }
 
 void StatsServer::getSystemMessage(){
@@ -487,7 +496,15 @@ void StatsServer::sendImage(std::shared_ptr<cv::Mat> _image, bool left, bool isG
     }
 }
 
-
+void StatsServer::updateTargetPointForGroundStation(){
+    CommandMessage c;
+    c.type = CommandMessage::SET_TARGET;
+    CvPoint3D32f targetPoint = odometryModule->targetPoint.get();
+    c.f[0] = targetPoint.x;
+    c.f[1] = targetPoint.y;
+    c.f[2] = targetPoint.z;
+    sendMessage(c);
+}
 
 
 /*void StatsServer::sendMessage(SystemMessage m)

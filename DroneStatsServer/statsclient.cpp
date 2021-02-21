@@ -113,6 +113,15 @@ void StatsClient::getCommandMessage(){
             std::cout<<"error"<<std::endl;
     }
     std::memcpy(&m,msg , sizeof(m));
+    switch (m.type) {
+        case CommandMessage::SET_TARGET:
+            vehicleData.targetpoint.set(CvPoint3D32f{m.f[0],m.f[1],m.f[2]});
+            emit(transmitTargetpointUpdated());
+            break;
+        default:
+            break;
+
+    }
 }
 
 
