@@ -19,7 +19,7 @@ public:
     //oglFont *glFont;
     void renderText(double x, double y, const QString &str, bool bold = false, QColor color = Qt::black);
     void getCoordinatespoint(CvPoint3D32f point);
-
+    void clearPoints();
 private:
     std::mutex pointsMutex;
     std::vector<CvPoint3D32f> points;

@@ -76,7 +76,7 @@ private:
     int GetCPULoad();
     //void sendMessage(PingMessage m);
     void getMessage();
-
+    std::chrono::microseconds lastDataUpdateForGroundStation;
     void getSystemMessage();
 
     void getMessageWithGrayImage();
@@ -91,6 +91,8 @@ private:
     void sendCoordinates();
 
     void updateTargetPointForGroundStation();
+
+    void updateDataForGroundStation();
 };
 
 

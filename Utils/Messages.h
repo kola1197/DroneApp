@@ -43,7 +43,8 @@ struct MessageWithGrayImage {                                           //get im
 };
 
 struct SystemMessage {
-    enum Type {START_VIDEO_STREAM, VIDEO_STREAM_STATUS, VIDEO_CAPTURE_STATUS, START_IMAGE_CAPTURE, STOP_IMAGE_CAPTURE, STOP_VIDEO_STREAM, TEXT_ALLERT, FPS_COUNTER, COORDINATES};
+    enum Type {START_VIDEO_STREAM, VIDEO_STREAM_STATUS, VIDEO_CAPTURE_STATUS, START_IMAGE_CAPTURE, STOP_IMAGE_CAPTURE,
+            STOP_VIDEO_STREAM, TEXT_ALLERT, FPS_COUNTER, COORDINATES, CONNECT_TO_PX};
     char text[200];
     int i[8];
     float f[3];
@@ -55,7 +56,7 @@ struct PingMessage{
 };
 
 struct CommandMessage{
-    enum Type{SET_TARGET};
+    enum Type{SET_TARGET, START, SET_THIS_POINT_AS_ZERO};
     Type type;
     char text[200];
     int i[9];

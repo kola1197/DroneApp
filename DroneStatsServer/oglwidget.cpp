@@ -148,3 +148,9 @@ void OGLWidget::getCoordinatespoint(CvPoint3D32f point)
         update();
     }
 }
+
+void OGLWidget::clearPoints() {
+    pointsMutex.lock();
+    points.clear();
+    pointsMutex.unlock();
+}

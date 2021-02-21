@@ -97,6 +97,10 @@ void MainWindow::setConnected(bool b)
     ui->ipEdit->setEnabled(!b);
     ui->getImageStreamButton->setEnabled(b);
     ui->onBoardVideoCapture->setEnabled(b);
+    ui->ConnectToPX4->setEnabled(b);
+    //ui->setTargetPointButton->setEnabled(b);
+    ui->SetCurrentPointAsZerroButton->setEnabled(b);
+    //ui->startFlightButton->setEnabled(b);      //after px  connection
 }
 
 void MainWindow::setRightImage(QImage value)
@@ -263,5 +267,51 @@ void MainWindow::on_setTargetPointButton_released()
         }
     } else{
         checkTargetPosition();
+    }
+}
+
+void MainWindow::on_ConnectToPX4_released()
+{
+    if (client.connected.get()){
+        SystemMessage s{};
+        s.type = SystemMessage::CONNECT_TO_PX;
+        s.i[0] =1;
+        client.sendMessage(s);
+    }
+    else{
+        QMessageBox msgBox;
+        msgBox.setText("Please connect to vehicle first");
+        msgBox.exec();
+    }
+}
+
+void MainWindow::on_startFlightButton_released()
+{
+    if (client.connected.get()){
+        CommandMessage s{};
+        s.type = CommandMessage::START;
+        s.i[0] = 1;
+        client.sendMessage(s);
+    }
+    else{
+        QMessageBox msgBox;
+        msgBox.setText("Please connect to vehicle first");
+        msgBox.exec();
+    }
+}
+
+void MainWindow::on_SetCurrentPointAsZerroButton_released()
+{
+    if (client.connected.get()){
+        CommandMessage s{};
+        s.type = CommandMessage::SET_THIS_POINT_AS_ZERO;
+        s.i[0] = 1;
+        client.sendMessage(s);
+        ui->openGLWidget->clearPoints();
+    }
+    else{
+        QMessageBox msgBox;
+        msgBox.setText("Please connect to vehicle first");
+        msgBox.exec();
     }
 }

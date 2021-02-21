@@ -18,9 +18,10 @@ public:
     double fps = 0;
     AsyncVar<CvPoint3D32f> coordinates{CvPoint3D32f{0,0,0}};
     AsyncVar<CvPoint3D32f> targetPoint{CvPoint3D32f{0,0,0}};
+    void setCurrentPointAsZero();
 
 private:
-
+    AsyncVar<bool> setZero{false};
     CameraModule* camModule;
     AsyncVar<bool> threadActive{true};
     void updateCoordinats();
@@ -40,6 +41,7 @@ private:
     void featureDetection(cv::Mat img_1, std::vector<cv::Point2f> &points1);
 
     double getAbsoluteScale(int frame_id, int sequence_id, double z_cal);
+
 };
 
 

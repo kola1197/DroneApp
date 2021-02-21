@@ -186,9 +186,10 @@ void StatsServer::startServer(){
     if (res == 0) {
         odometryModule = new OdometryModule(&camModule);
         odometryModule->startThread();
-        int testcounter = 0;
+        //int testcounter = 0;
         while (!stopThread()) {
-            if (imageSendMode.get()) {
+            updateDataForGroundStation();
+            /*if (imageSendMode.get()) {
                 //std::cout<<"image sent"<<std::endl;
                 //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
                 bool isGrey = camModule.getTestMode() == 0;
@@ -200,7 +201,7 @@ void StatsServer::startServer(){
             SystemMessage s{};
             s.type = SystemMessage::FPS_COUNTER;
             s.i[0] = (int)odometryModule->fps;
-            sendMessage(s);
+            sendMessage(s);*/
             //std::cout<<"images sent "<<testcounter<<std::end;
         }
     }
@@ -231,6 +232,26 @@ void StatsServer::startServer(){
 //        usleep(40000);
 //    }
 
+}
+
+void StatsServer::updateDataForGroundStation()
+{
+    std::chrono::microseconds timeNow = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    if ((timeNow - lastDataUpdateForGroundStation).count() > 16666) {
+        if (imageSendMode.get()) {
+            //std::cout<<"image sent"<<std::endl;
+            //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
+            bool isGrey = camModule.getTestMode() == 0;
+            sendImage(camModule.leftImage.getImage(), true, isGrey);
+            sendImage(camModule.rightImage.getImage(), false, isGrey);
+        }
+        sendCoordinates();
+        SystemMessage s{};
+        s.type = SystemMessage::FPS_COUNTER;
+        s.i[0] = (int) odometryModule->fps;
+        sendMessage(s);
+        lastDataUpdateForGroundStation = timeNow;
+    }
 }
 
 void StatsServer::sendCoordinates()
@@ -303,6 +324,12 @@ void StatsServer::getCommandMessage(){
         case CommandMessage::SET_TARGET:
             odometryModule->targetPoint.set(CvPoint3D32f{m.f[0],m.f[1],m.f[2]});
             updateTargetPointForGroundStation();
+            break;
+        case CommandMessage::SET_THIS_POINT_AS_ZERO:
+            odometryModule->setCurrentPointAsZero();
+            break;
+        case CommandMessage::START:
+
             break;
         default:
             break;

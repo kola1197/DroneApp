@@ -40,6 +40,12 @@ private slots:
 
     void on_setTargetPointButton_released();
 
+    void on_ConnectToPX4_released();
+
+    void on_startFlightButton_released();
+
+    void on_SetCurrentPointAsZerroButton_released();
+
 private:
     Ui::MainWindow *ui;
     StatsClient client;

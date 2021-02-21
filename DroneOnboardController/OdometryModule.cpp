@@ -137,7 +137,12 @@ void OdometryModule::updateCoordinats()         //try mono
                 R_f = R*R_f;
 
             }
-
+            if (setZero.get()){
+                firstFrame = true;
+                setZero.set(false);
+                /*R_f = R.clone();
+                t_f = t.clone();*/
+            }
             if (prevFeatures.size() < MIN_NUM_FEAT)	{
                 //cout << "Number of tracked features reduced to " << prevFeatures.size() << endl;
                 //cout << "trigerring redection" << endl;
@@ -204,7 +209,6 @@ double OdometryModule::getAbsoluteScale(int frame_id, int sequence_id, double z_
                 if (j==7) y=z;
                 if (j==3)  x=z;
             }
-
             i++;
         }
         myfile.close();
@@ -252,4 +256,9 @@ void OdometryModule::featureDetection(cv::Mat img_1, std::vector<cv::Point2f>& p
     bool nonmaxSuppression = true;
     FAST(img_1, keypoints_1, fast_threshold, nonmaxSuppression);
     cv::KeyPoint::convert(keypoints_1, points1, std::vector<int>());
+}
+
+void OdometryModule::setCurrentPointAsZero()
+{
+    setZero.set(true);
 }

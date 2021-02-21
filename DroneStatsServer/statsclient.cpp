@@ -120,7 +120,6 @@ void StatsClient::getCommandMessage(){
             break;
         default:
             break;
-
     }
 }
 
@@ -264,6 +263,9 @@ void StatsClient::getSystemMessage()
             //CvPoint3D32f point(m.f[0],m.f[1],m.f[2]);
             emit transmitCoordinates(CvPoint3D32f(m.f[0],m.f[1],m.f[2]));
             //std::cout<<"Point x:"<<m.f[0]<<" y:"<<m.f[1]<<" z:"<<m.f[2]<<std::endl;
+            break;
+        case SystemMessage::CONNECT_TO_PX:
+            //TODO: add px connection module
             break;
         default:
             break;

@@ -81,7 +81,7 @@ ELSE()
         #dmcalibrator.cpp
         #mcalibrator.h
 
-            Settings.cpp Settings.h)
+            Settings.cpp Settings.h PX4Comannder.cpp PX4Comannder.h)
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} pthread)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()
