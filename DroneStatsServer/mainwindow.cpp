@@ -356,6 +356,6 @@ void MainWindow::updatePX4Data()
 {
     QString text = "";
     text += client.vehicleData.connectedToPx.get()? "Connected" : "NOT Connected to PX4\n";
-    text += client.vehicleData.connectionCounter.get()>2? "Trying to connect "+QString::number(client.vehicleData.connectionCounter.get())+" seconds remain\n" : "\n";
+    text += client.vehicleData.connectionCounter.get()>2 && !client.vehicleData.connectedToPx.get() ?  "Trying to connect "+QString::number(client.vehicleData.connectionCounter.get())+" seconds remain\n" : "\n";
     ui->PXInfoLabel->setText(text);
 }

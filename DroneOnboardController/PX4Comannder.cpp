@@ -6,19 +6,56 @@
 #include "PX4Comannder.h"
 #include <unistd.h>
 #include <iostream>
+#include <thread>
+#include <pthread.h>
+#include <wait.h>
 #include "MAVConnector.h"
 
 PX4Comannder::PX4Comannder(){}
 
 void PX4Comannder::startDronekit()
 {
-    std::cout<<"turning on drone kit"<<std::endl;
-    std::string path = "/usr/bin/python";
-    std::string script = "/home/user/script.py";
-    std::string arg = "arg";
-    char *argv [2];
-    execvp("/home/nickolay/Code/DroneApp/DroneOnboardController/Python/main.py",argv);
-    //std::cerr<<"cannot exec"<<endl;
+    std::thread thr([this]() {
+    pid_t child_pid;
+
+    /* Duplicate this process.  */
+    child_pid = fork ();
+
+    if (child_pid != 0){
+        /* This is the parent process.  */
+
+        int ret = waitpid(child_pid, NULL, 0);
+
+        if (ret == -1){
+            printf ("an error occurred in waitpid\n");
+            abort ();
+        }
+    }
+    else {
+        std::cout << "turning on drone kit" << std::endl;
+        char *argv[2];
+        argv[0] = "python3";
+        argv[1] = "/home/nickolay/Code/DroneApp/DroneOnboardController/Python/Main.py";
+        argv[2] = NULL;
+
+        execvp("python3", argv);        /* The execvp function returns only if an error occurs.  */
+        //printf ("an error occurred in execl\n");
+        //abort ();
+    }
+    });
+    thr.detach();
+    std::cout<<"detached"<<std::endl;
+    /*std::thread thr([this]() {
+        std::cout << "turning on drone kit" << std::endl;
+        char *argv[2];
+        argv[0] = "python3";
+        argv[1] = "/home/nickolay/Code/DroneApp/DroneOnboardController/Python/Main.py";
+        argv[2] = NULL;
+
+        execvp("python3", argv);
+    });
+    thr.detach();
+    std::cout<<"detached"<<std::endl;*/
 }
 
 bool PX4Comannder::connectToPX4()

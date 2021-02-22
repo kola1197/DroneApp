@@ -479,7 +479,7 @@ void StatsServer::UpConnectionToPX4(){
             sendMessage(s);
             std::cout<<connectionCounter<<" iterations remain to connect px4"<<std::endl;
         }
-        std::cout<<"Failed to connect to PX4"<<std::endl;
+        //std::cout<<"Failed to connect to PX4"<<std::endl;
     });
     thr.detach();
 }
