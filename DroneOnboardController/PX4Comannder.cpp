@@ -44,21 +44,16 @@ void PX4Comannder::startDronekit()
     }
     });
     thr.detach();
-    std::cout<<"detached"<<std::endl;
-    /*std::thread thr([this]() {
-        std::cout << "turning on drone kit" << std::endl;
-        char *argv[2];
-        argv[0] = "python3";
-        argv[1] = "/home/nickolay/Code/DroneApp/DroneOnboardController/Python/Main.py";
-        argv[2] = NULL;
-
-        execvp("python3", argv);
-    });
-    thr.detach();
-    std::cout<<"detached"<<std::endl;*/
+    //std::cout<<"detached"<<std::endl;
 }
 
 bool PX4Comannder::connectToPX4()
 {
     mavConnector.ConnectToServer();
+}
+
+void PX4Comannder::sendCommnads(int thr, int pitch, int roll, int yaw)
+{
+
+    mavConnector.SendData();
 }

@@ -15,8 +15,10 @@ public:
     void startDronekit();
     AsyncVar<VehicleMode> vehicleMode{QUADROCOPTER};
     bool connectToPX4();
-
+    AsyncVar<bool> connected{false};
+    void sendCommnads(int thr, int pitch, int roll, int yaw);
 private:
+    Comm
     MAVConnector mavConnector;
 };
 

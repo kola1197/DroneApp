@@ -85,7 +85,12 @@ ELSE()
         Settings.cpp
         Settings.h
         PX4Comannder.cpp
-        PX4Comannder.h)
+        PX4Comannder.h
+        commandinput.cpp
+        commandinput.h
+        command.cpp
+        command.h
+    )
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} pthread)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()
