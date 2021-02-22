@@ -54,6 +54,8 @@ bool PX4Comannder::connectToPX4()
 
 void PX4Comannder::sendCommnads(int thr, int pitch, int roll, int yaw)
 {
-
-    //mavConnector.SendData();
+    std::string data = commandInput.getCommand().getDataToSend();
+    char char_array[data.length() + 1];
+    strcpy(char_array, data.c_str());
+    mavConnector.SendData(char_array);
 }

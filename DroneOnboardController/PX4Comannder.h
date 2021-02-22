@@ -6,6 +6,7 @@
 #define DRONEAPP_PX4COMANNDER_H
 #include "../Utils/AsyncVar.h"
 #include "MAVConnector.h"
+#include "commandinput.h"
 
 
 enum VehicleMode{QUADROCOPTER = 0, CAR = 1};
@@ -18,8 +19,8 @@ public:
     bool connectToPX4();
     AsyncVar<bool> connected{false};
     void sendCommnads(int thr, int pitch, int roll, int yaw);
+    CommandInput commandInput;
 private:
-
     MAVConnector mavConnector;
 };
 
