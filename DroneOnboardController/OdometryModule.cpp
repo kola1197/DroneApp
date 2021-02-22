@@ -162,7 +162,7 @@ void OdometryModule::updateCoordinats()         //try mono
             coordinates.set(CvPoint3D32f(t_f.at<double>(0),t_f.at<double>(1),t_f.at<double>(2)));
             sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2));
             putText(traj, text, textOrg, fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
-            std::cout<<text<<std::endl;
+            //std::cout<<text<<std::endl;
             //imshow( "Road facing camera", currImage_c );
             imshow( "Trajectory", traj );
             //std::cout<<text<<std::endl;

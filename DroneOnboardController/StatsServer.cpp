@@ -292,6 +292,9 @@ void StatsServer::getSystemMessage(){
             sendMessage(answer);
             sendAllert("Recording stopped");
             break;
+        case SystemMessage::CONNECT_TO_PX:  //TODO: make asynk
+            UpConnectionToPX4();
+            break;
         default:
             break;
     }
@@ -457,6 +460,28 @@ void StatsServer::UpdateSettingsForGroundStation()
 {
     updateTargetPointForGroundStation();
     updateVehicleStatusForGroundStation();
+}
+
+void StatsServer::UpConnectionToPX4(){
+    std::thread thr([this]() {
+        odometryModule->px4Commander.startDronekit();
+        std::cout<<"dronekit started"<<std::endl;
+        int connectionCounter = 30;
+        bool connected = false;
+        while (connectionCounter>1 && !connected){
+            connectionCounter--;
+            usleep(1000000);
+            connected = odometryModule->px4Commander.connectToPX4();
+            SystemMessage s{};
+            s.type = SystemMessage::PX_CONNECTION_STATUS;
+            s.i[0] = connected ? 1: 0;
+            s.i[1] = connectionCounter;
+            sendMessage(s);
+            std::cout<<connectionCounter<<" iterations remain to connect px4"<<std::endl;
+        }
+        std::cout<<"Failed to connect to PX4"<<std::endl;
+    });
+    thr.detach();
 }
 
 #pragma clang diagnostic pop

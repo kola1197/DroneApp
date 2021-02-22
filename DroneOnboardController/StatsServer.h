@@ -97,6 +97,8 @@ private:
     void updateVehicleStatusForGroundStation();
 
     void UpdateSettingsForGroundStation();
+
+    void UpConnectionToPX4();
 };
 
 

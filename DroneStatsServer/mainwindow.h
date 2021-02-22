@@ -51,6 +51,7 @@ private slots:
     void on_horizontalSlider_rangeChanged(int min, int max);
     void setVehicleModeValue();
     void setTargetPosition();
+    void updatePX4Data();
 private:
     Ui::MainWindow *ui;
     StatsClient client;

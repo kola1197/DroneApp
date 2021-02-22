@@ -76,6 +76,7 @@ signals:
     void transmitPing(QString q);
     void transmitTargetpointUpdated();
     void transmitVehicleModeValue();
+    void transmitUpdatePX4Data();
 private slots:
     void sendPingRequest();
 private:

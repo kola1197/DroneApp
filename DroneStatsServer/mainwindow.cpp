@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitCoordinates(CvPoint3D32f)),this,SLOT(getCoordinatespoint(CvPoint3D32f)));
     connect(&client,SIGNAL(transmitTargetpointUpdated()),this,SLOT(setTargetPosition()));
     connect(&client,SIGNAL(transmitVehicleModeValue()),this,SLOT(setVehicleModeValue()));
+    connect(&client,SIGNAL(transmitUpdatePX4Data()),this,SLOT(updatePX4Data()));
     std::thread thr([this]()
                     {
                         int cnt = 0;
@@ -349,4 +350,12 @@ void MainWindow::setVehicleModeValue()
 void MainWindow::on_horizontalSlider_rangeChanged(int min, int max)
 {
 
+}
+
+void MainWindow::updatePX4Data()
+{
+    QString text = "";
+    text += client.vehicleData.connectedToPx.get()? "Connected" : "NOT Connected to PX4\n";
+    text += client.vehicleData.connectionCounter.get()>2? "Trying to connect "+QString::number(client.vehicleData.connectionCounter.get())+" seconds remain\n" : "\n";
+    ui->PXInfoLabel->setText(text);
 }

@@ -14,6 +14,8 @@ class VehicleData {
 public:
     AsyncVar<CvPoint3D32f> targetpoint{CvPoint3D32f{0,0,0}};
     AsyncVar<VehicleMode> vehicleMode{QUADROCOPTER};
+    AsyncVar<bool> connectedToPx;
+    AsyncVar<int> connectionCounter{0};
 };
 
 
