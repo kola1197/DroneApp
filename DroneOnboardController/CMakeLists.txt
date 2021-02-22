@@ -90,6 +90,10 @@ ELSE()
         commandinput.h
         command.cpp
         command.h
+        StoppableThread.cpp
+        StoppableThread.h
+        joystickinput.h
+        joystickinput.cpp
     )
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} pthread)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)

@@ -55,5 +55,5 @@ bool PX4Comannder::connectToPX4()
 void PX4Comannder::sendCommnads(int thr, int pitch, int roll, int yaw)
 {
 
-    mavConnector.SendData();
+    //mavConnector.SendData();
 }

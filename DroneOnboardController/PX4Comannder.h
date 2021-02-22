@@ -7,6 +7,7 @@
 #include "../Utils/AsyncVar.h"
 #include "MAVConnector.h"
 
+
 enum VehicleMode{QUADROCOPTER = 0, CAR = 1};
 
 class PX4Comannder {
@@ -18,7 +19,7 @@ public:
     AsyncVar<bool> connected{false};
     void sendCommnads(int thr, int pitch, int roll, int yaw);
 private:
-    Comm
+
     MAVConnector mavConnector;
 };
 

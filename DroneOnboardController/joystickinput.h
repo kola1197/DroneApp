@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <mutex>
 #include <QObject>
-#include "StoppableThread.h"
 
 class JoyStickInput  : public QObject, public StoppableThread
 {
