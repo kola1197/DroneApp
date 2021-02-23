@@ -61,7 +61,8 @@ void OdometryModule::updateCoordinats()         //try mono
     double scale = 1.00;
     char text[100];
     double focal = 718.8560;
-    cv::Point2d pp(607.1928, 185.2157);
+    //cv::Point2d pp(607.1928, 185.2157);
+    cv::Point2d pp(320, 240);
     cv::Mat img_1, img_2;
     //cv::Mat R_f, t_f; //the final rotation and tranlation vectors containing the
 
@@ -91,16 +92,21 @@ void OdometryModule::updateCoordinats()         //try mono
             featureTracking(img_1,img_2,points1,points2, status); //track those features to img_2
             //std::cout<<"update coords 3"<<std::endl;
 
-            E = findEssentialMat(points2, points1, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
-            recoverPose(E, points2, points1, R, t, focal, pp, mask);
-            prevFeatures = points2;
-            prevImage = img_2.clone();
-            firstFrame = false;
+            if (!points1.empty() && !points2.empty()){
+                E = findEssentialMat(points2, points1, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
 
-            R_f = R.clone();
-            t_f = t.clone();
+                if (E.cols == 3 && E.rows == 3) {
+                    recoverPose(E, points2, points1, R, t, focal, pp, mask);
+                    prevFeatures = points2;
+                    prevImage = img_2.clone();
+                    firstFrame = false;
 
-            std::cout<< " First frame done" << std::endl; //return -1;
+                    R_f = R.clone();
+                    t_f = t.clone();
+
+                    std::cout << " First frame done" << std::endl; //return -1;
+                }
+            }
         }
         else{
             cv::Mat  currImage;
@@ -111,62 +117,72 @@ void OdometryModule::updateCoordinats()         //try mono
             std::vector<cv::Point2f> currFeatures;
             featureTracking(prevImage_c, currImage_c, prevFeatures, currFeatures, status);
             timeOnSecondPartb = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+            if (!currFeatures.empty()) {
+                E = findEssentialMat(currFeatures, prevFeatures, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
+                if (!E.empty()){
 
-            E = findEssentialMat(currFeatures, prevFeatures, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
-            recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
-            timeOnThirdPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+
+                    recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
+                    timeOnThirdPart = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch());
 //            if (!R_f.data){
 //                R_f = R.clone();
 //                t_f = t.clone();
 //                std::cout<<"R_f set"<<std::endl;            }
-            cv::Mat prevPts(2,prevFeatures.size(), CV_64F), currPts(2,currFeatures.size(), CV_64F);
+                    cv::Mat prevPts(2, prevFeatures.size(), CV_64F), currPts(2, currFeatures.size(), CV_64F);
 
-            for(int i=0;i<prevFeatures.size();i++)	{   //this (x,y) combination makes sense as observed from the source code of triangulatePoints on GitHub
-                prevPts.at<double>(0,i) = prevFeatures.at(i).x;
-                prevPts.at<double>(1,i) = prevFeatures.at(i).y;
+                    for (int i = 0; i <
+                                    prevFeatures.size(); i++) {   //this (x,y) combination makes sense as observed from the source code of triangulatePoints on GitHub
+                        prevPts.at<double>(0, i) = prevFeatures.at(i).x;
+                        prevPts.at<double>(1, i) = prevFeatures.at(i).y;
 
-                currPts.at<double>(0,i) = currFeatures.at(i).x;
-                currPts.at<double>(1,i) = currFeatures.at(i).y;
+                        currPts.at<double>(0, i) = currFeatures.at(i).x;
+                        currPts.at<double>(1, i) = currFeatures.at(i).y;
+                    }
+                    scale = 1.0;
+                    timeOnForthPart = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch());
+                    //scale = getAbsoluteScale(frameNum, 0, t.at<double>(2));
+                    if ((scale > 0.1) && (t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))) {
+
+                        t_f = t_f + scale * (R_f * t);
+                        R_f = R * R_f;
+
+                    }
+                    if (setZero.get()) {
+                        firstFrame = true;
+                        setZero.set(false);
+                        /*R_f = R.clone();
+                        t_f = t.clone();*/
+                    }
+                    if (prevFeatures.size() < MIN_NUM_FEAT) {
+                        //cout << "Number of tracked features reduced to " << prevFeatures.size() << endl;
+                        //cout << "trigerring redection" << endl;
+                        featureDetection(prevImage, prevFeatures);
+                        featureTracking(prevImage, currImage, prevFeatures, currFeatures, status);
+
+                    }
+                    prevImage = currImage.clone();
+                    prevFeatures = currFeatures;
+
+                    timeOnFifthPart = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch());
+                    int x = int(t_f.at<double>(0)) + 300;
+                    int y = int(t_f.at<double>(2)) + 100;
+                    circle(traj, cv::Point(x, y), 1, CV_RGB(255, 0, 0), 2);
+
+                    rectangle(traj, cv::Point(10, 30), cv::Point(550, 50), CV_RGB(0, 0, 0), CV_FILLED);
+                    coordinates.set(CvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+                    sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
+                            t_f.at<double>(2));
+                    putText(traj, text, textOrg, fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+                    //std::cout<<text<<std::endl;
+                    //imshow( "Road facing camera", currImage_c );
+                    imshow("Trajectory", traj);
+                    //std::cout<<text<<std::endl;
+                    cv::waitKey(1);
+                }
             }
-            scale = 1.0;
-            timeOnForthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
-            //scale = getAbsoluteScale(frameNum, 0, t.at<double>(2));
-            if ((scale>0.1)&&(t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))) {
-
-                t_f = t_f + scale*(R_f*t);
-                R_f = R*R_f;
-
-            }
-            if (setZero.get()){
-                firstFrame = true;
-                setZero.set(false);
-                /*R_f = R.clone();
-                t_f = t.clone();*/
-            }
-            if (prevFeatures.size() < MIN_NUM_FEAT)	{
-                //cout << "Number of tracked features reduced to " << prevFeatures.size() << endl;
-                //cout << "trigerring redection" << endl;
-                featureDetection(prevImage, prevFeatures);
-                featureTracking(prevImage,currImage,prevFeatures,currFeatures, status);
-
-            }
-            prevImage = currImage.clone();
-            prevFeatures = currFeatures;
-
-            timeOnFifthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
-            int x = int(t_f.at<double>(0)) + 300;
-            int y = int(t_f.at<double>(2)) + 100;
-            circle(traj, cv::Point(x, y) ,1, CV_RGB(255,0,0), 2);
-
-            rectangle( traj, cv::Point(10, 30), cv::Point(550, 50), CV_RGB(0,0,0), CV_FILLED);
-            coordinates.set(CvPoint3D32f(t_f.at<double>(0),t_f.at<double>(1),t_f.at<double>(2)));
-            sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2));
-            putText(traj, text, textOrg, fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
-            //std::cout<<text<<std::endl;
-            //imshow( "Road facing camera", currImage_c );
-            imshow( "Trajectory", traj );
-            //std::cout<<text<<std::endl;
-            cv::waitKey(1);
         }
     }
 
@@ -229,7 +245,7 @@ void OdometryModule::featureTracking(cv::Mat img_1, cv::Mat img_2, std::vector<c
 //this function automatically gets rid of points for which tracking fails
 
     std::vector<float> err;
-    cv::Size winSize = cv::Size(7,7);
+    cv::Size winSize = cv::Size(15,15);
     cv::TermCriteria termcrit = cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01);
 
     if (points1.size()>2) {
