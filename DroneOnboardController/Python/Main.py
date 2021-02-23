@@ -27,9 +27,9 @@ class Main:
         self.PX.vehicle.channels.overrides = {'1': ch[0], '2': ch[1], '3': ch[2], '4': ch[3]}
 
     def CreateServer(self):
-        file = open("Server.txt", "w")
-        file.write("I AM ALIVE!!!")
-        file.close()
+        #file = open("Server.txt", "w")
+        #file.write("I AM ALIVE!!!")
+        #file.close()
         self.PX.Connect()
         if (self.PX.connected):
             server_address = ('localhost', 60239)

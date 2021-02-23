@@ -32,7 +32,7 @@ void OdometryModule::startThread()
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
-                //updateCoordinats();
+                updateCoordinats();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
             } else {
@@ -130,7 +130,7 @@ void OdometryModule::updateCoordinats()         //try mono
             }
             scale = 1.0;
             timeOnForthPart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
-            scale = getAbsoluteScale(frameNum, 0, t.at<double>(2));
+            //scale = getAbsoluteScale(frameNum, 0, t.at<double>(2));
             if ((scale>0.1)&&(t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))) {
 
                 t_f = t_f + scale*(R_f*t);
@@ -232,19 +232,21 @@ void OdometryModule::featureTracking(cv::Mat img_1, cv::Mat img_2, std::vector<c
     cv::Size winSize = cv::Size(7,7);
     cv::TermCriteria termcrit = cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01);
 
-    calcOpticalFlowPyrLK(img_1, img_2, points1, points2, status, err, winSize, 3, termcrit, 0, 0.001);
+    if (points1.size()>2) {
+        calcOpticalFlowPyrLK(img_1, img_2, points1, points2, status, err, winSize, 3, termcrit, 0, 0.001);
 
     //getting rid of points for which the KLT tracking failed or those who have gone outside the frame
-    int indexCorrection = 0;
-    for( int i=0; i<status.size(); i++)
-    {  cv::Point2f pt = points2.at(i- indexCorrection);
-        if ((status.at(i) == 0)||(pt.x<0)||(pt.y<0))	{
-            if((pt.x<0)||(pt.y<0))	{
-                status.at(i) = 0;
+        int indexCorrection = 0;
+        for( int i=0; i<status.size(); i++)
+        {  cv::Point2f pt = points2.at(i- indexCorrection);
+            if ((status.at(i) == 0)||(pt.x<0)||(pt.y<0))	{
+                if((pt.x<0)||(pt.y<0))	{
+                    status.at(i) = 0;
+                }
+                points1.erase (points1.begin() + (i - indexCorrection));
+                points2.erase (points2.begin() + (i - indexCorrection));
+                indexCorrection++;
             }
-            points1.erase (points1.begin() + (i - indexCorrection));
-            points2.erase (points2.begin() + (i - indexCorrection));
-            indexCorrection++;
         }
     }
 }
