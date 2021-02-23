@@ -57,6 +57,7 @@ ELSE()
     message("-- x64 architecture detected")
     #set(CMAKE_AUTOUIC ON)
     find_package(Qt5 COMPONENTS Widgets REQUIRED)
+    find_package(realsense2 REQUIRED)
     add_executable(
         DroneOnboardController
         main.cpp
@@ -95,7 +96,7 @@ ELSE()
         joystickinput.h
         joystickinput.cpp
     )
-    target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} pthread)
+    target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${realsense2_LIBRARY} pthread )
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()
 target_include_directories(DroneOnboardController PUBLIC Utils)

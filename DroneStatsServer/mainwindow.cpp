@@ -23,19 +23,25 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&client,SIGNAL(transmitTargetpointUpdated()),this,SLOT(setTargetPosition()));
     connect(&client,SIGNAL(transmitVehicleModeValue()),this,SLOT(setVehicleModeValue()));
     connect(&client,SIGNAL(transmitUpdatePX4Data()),this,SLOT(updatePX4Data()));
+    connect(this,SIGNAL(transmitUpdateLabels()),this,SLOT(updateImages()));
+
     std::thread thr([this]()
                     {
-                        int cnt = 0;
-                        while (true) {
+                        int cnt = 1;
+                        while (cnt > 0) {
                             if (!client.closeConnectionThreadBool.get()) {
                                 cnt++;
                                 //std::cout << "image updated "<<cnt<<std::endl;
                                 //QString name = "im";
                                 //name+=QString::number(cnt);
                                 //getLeftImage().save(name, "JPG");
-                                ui->leftImageLabel->setPixmap(QPixmap::fromImage(getLeftImage()));
+                                //QPixmap pix;
+                                //QPixmap pMap = QPixmap::fromImage(Image).scaled(label.size(),Qt::KeepAspectRatio);
+                                /*ui->leftImageLabel->setPixmap(QPixmap::fromImage(getLeftImage()));
                                 ui->rightImageLabel->setPixmap(QPixmap::fromImage(getRightImage()));
-
+                                ui->leftImageLabel->resize(getLeftImage().size());
+                                ui->rightImageLabel->resize(getRightImage().size());*/
+                                emit(transmitUpdateLabels());
                             }
                             usleep(40000);
                         }
@@ -43,6 +49,14 @@ MainWindow::MainWindow(QWidget *parent)
     thr.detach();
 
     checkTargetPosition();
+}
+
+void MainWindow::updateImages()
+{
+    ui->leftImageLabel->setPixmap(QPixmap::fromImage(getLeftImage()));
+    ui->rightImageLabel->setPixmap(QPixmap::fromImage(getRightImage()));
+    ui->leftImageLabel->resize(getLeftImage().size());
+    ui->rightImageLabel->resize(getRightImage().size());
 }
 
 MainWindow::~MainWindow()

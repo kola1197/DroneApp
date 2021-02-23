@@ -27,7 +27,7 @@ public slots:
     void setVideoStreamMode(bool mode);
     void setConnected(bool connected);                   //on server tcp connection on/off changes
     void setPing(QString q);
-
+    void updateImages();
 private slots:
     void on_connectButton_released();
     void on_getImageStreamButton_pressed();
@@ -52,6 +52,8 @@ private slots:
     void setVehicleModeValue();
     void setTargetPosition();
     void updatePX4Data();
+signals:
+    void transmitUpdateLabels();
 private:
     Ui::MainWindow *ui;
     StatsClient client;

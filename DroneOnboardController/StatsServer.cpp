@@ -144,7 +144,7 @@ void StatsServer::updateDataForGroundStation()
         if (imageSendMode.get()) {
             //std::cout<<"image sent"<<std::endl;
             //cv::imwrite("testLeftGREYOut.jpg",*camModule.leftImage.getImage());
-            bool isGrey = camModule.getTestMode() == 0;
+            bool isGrey = camModule.getCaptureMode() == 0;
             sendImage(camModule.leftImage.getImage(), true, isGrey);
             sendImage(camModule.rightImage.getImage(), false, isGrey);
         }

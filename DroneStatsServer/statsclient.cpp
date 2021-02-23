@@ -171,7 +171,9 @@ void StatsClient::getMessageWithColorImage()
         {
             imdata[i] = m.imData[i];
         }
-        cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
+        cv::Mat img(cv::Size(m.width, m.height), CV_8UC3, imdata);
+        cv::Mat img1;
+        cv::cvtColor(img, img1, cv::COLOR_BGR2RGB);
         //cv::imwrite("../TESTGREY.jpg",img1);
         QImage image = mat2RealQImage(img1, false);
         //counter++;
@@ -186,7 +188,9 @@ void StatsClient::getMessageWithColorImage()
         {
             imdata[i] = m.imData[i];
         }
-        cv::Mat img1(cv::Size(m.width, m.height), CV_8UC3, imdata);
+        cv::Mat img(cv::Size(m.width, m.height), CV_8UC3, imdata);
+        cv::Mat img1;
+        cv::cvtColor(img, img1, cv::COLOR_BGR2RGB);
         QImage image = mat2RealQImage(img1, false);
         emit transmit_to_right_image(image);
     }

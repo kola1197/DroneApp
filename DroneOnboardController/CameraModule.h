@@ -15,6 +15,9 @@
 //#include "DJI_guidance.h"
 //#include "DJI_utility.h"
 //#endif
+#include <librealsense2/rs.hpp>
+
+enum CaptureMode{TEST_DATASET = 0, REALSENSE = 1};
 
 class CameraModule {
 
@@ -30,8 +33,8 @@ public:
     int startThread();
     void stopThread();
     void setImageCaptureMode(bool mode);
-    int setTestMode(int i);
-    int getTestMode();
+    int setCaptureMode(CaptureMode i);
+    int getCaptureMode();
     AsyncVar<bool> gotImage{false};
     AsyncVar<bool> imageForOdometryModuleUpdated{false};
     AsyncVar<int> frameNum{0};
@@ -53,7 +56,8 @@ private:
 //#ifdef __arm__
 //    int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
 //#else
-    int testMode = 2;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
+    //int testMode = 2;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
+    AsyncVar<CaptureMode> captureMode {CaptureMode::REALSENSE};
 //#endif
     void getDirectoryToSave();
     std::string dirToSave = "";
