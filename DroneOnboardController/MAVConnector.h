@@ -4,7 +4,7 @@
 
 #ifndef AUTOPILOT_MAVCONNECTOR_H
 #define AUTOPILOT_MAVCONNECTOR_H
-#include <python2.7/Python.h>
+//#include <python2.7/Python.h>
 
 
 class MAVConnector {
