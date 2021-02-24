@@ -13,7 +13,9 @@
 #include "CameraModule.h"
 #include "stdio.h"
 #include "opencv2/xfeatures2d.hpp"
-
+#include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
+#include <librealsense2/rs_advanced_mode.hpp>
+#include <librealsense2/rsutil.h>
 //#ifdef __arm__
 //e_vbus_index CameraModule::sensor_id = e_vbus4;
 //cv::Mat CameraModule::g_greyscale_image_left = cv::Mat::zeros(240,320,CV_8UC1);
@@ -98,15 +100,31 @@ int CameraModule::startThread() {
             //cv::VideoCapture leftCamera("/dev/video0");
             //cv::VideoCapture rightCamera("/dev/video2");
             //cv::VideoCapture rightCamera(0);
+            rs2::config cfg;
+            float ResultVector[3];
+            float InputPixelAsFloat[2];
+            InputPixelAsFloat[0] = 416;
+            InputPixelAsFloat[1] = 316;
+            cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 10);
+            cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_RGB8, 10);
+
             rs2::colorizer color_map;
             rs2::pipeline pipe;
-            pipe.start();
+            auto MyPipelineProfile = pipe.start();
+            auto DepthStream = MyPipelineProfile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
+            rs2_intrinsics DepthIntrinsics = DepthStream.get_intrinsics();
+            for (int i = 0; i<10; i++)//to skip first few frames when device just initiated
+                auto frames = pipe.wait_for_frames();
             while (!threadStop.get()){
                 rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
                 rs2::frame color = data.get_color_frame();
-                rs2::frame depth = data.get_depth_frame().apply_filter(color_map);
+                rs2::depth_frame depthFrame = data.get_depth_frame();
                 const int w = color.as<rs2::video_frame>().get_width();
                 const int h = color.as<rs2::video_frame>().get_height();
+                float distance = depthFrame.get_distance(320, 240);
+                rs2_deproject_pixel_to_point(ResultVector, &DepthIntrinsics, InputPixelAsFloat, distance);
+                std::cout <<"DEPROJECTED POINT: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
+                rs2::frame depth = depthFrame.apply_filter(color_map);
 
                 cv::Mat colorImageA(cv::Size(w, h), CV_8UC3, (void*)color.get_data(), cv::Mat::AUTO_STEP);
                 cv::Mat colorImage;
@@ -118,6 +136,8 @@ int CameraModule::startThread() {
                 const int ww = depth.as<rs2::video_frame>().get_width();
                 const int hh = depth.as<rs2::video_frame>().get_height();
                 cv::Mat depthImage (cv::Size(ww, hh), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
+
+                circle(depthImage, cv::Point(320, 240), 1, CV_RGB(0, 255, 0), 2);
 
                 imshow("color test", colorImage);
                 imshow("depth test", depthImage);

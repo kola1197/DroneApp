@@ -119,9 +119,7 @@ void OdometryModule::updateCoordinats()         //try mono
             timeOnSecondPartb = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
             if (!currFeatures.empty()) {
                 E = findEssentialMat(currFeatures, prevFeatures, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
-                if (!E.empty()){
-
-
+                if (E.cols == 3 && E.rows == 3) {
                     recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
                     timeOnThirdPart = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::system_clock::now().time_since_epoch());
