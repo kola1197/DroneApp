@@ -112,19 +112,21 @@ int CameraModule::startThread() {
             rs2::pipeline pipe;
             auto MyPipelineProfile = pipe.start();
             auto DepthStream = MyPipelineProfile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
-            rs2_intrinsics DepthIntrinsics = DepthStream.get_intrinsics();
+            rs2_intrinsics lDepthIntrinsics = DepthStream.get_intrinsics();
             for (int i = 0; i<10; i++)//to skip first few frames when device just initiated
                 auto frames = pipe.wait_for_frames();
             while (!threadStop.get()){
                 rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
                 rs2::frame color = data.get_color_frame();
-                rs2::depth_frame depthFrame = data.get_depth_frame();
+                rs2::depth_frame localDepthFrame = data.get_depth_frame();
                 const int w = color.as<rs2::video_frame>().get_width();
                 const int h = color.as<rs2::video_frame>().get_height();
-                float distance = depthFrame.get_distance(320, 240);
-                rs2_deproject_pixel_to_point(ResultVector, &DepthIntrinsics, InputPixelAsFloat, distance);
+                float distance = localDepthFrame.get_distance(320, 240);
+
+                rs2_deproject_pixel_to_point(ResultVector, &lDepthIntrinsics, InputPixelAsFloat, distance);
                 std::cout <<"DEPROJECTED POINT: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
-                rs2::frame depth = depthFrame.apply_filter(color_map);
+                //std::cout<<localDepthFrame.get_data()<<std::endl;
+                rs2::frame depth = localDepthFrame.apply_filter(color_map);
 
                 cv::Mat colorImageA(cv::Size(w, h), CV_8UC3, (void*)color.get_data(), cv::Mat::AUTO_STEP);
                 cv::Mat colorImage;
@@ -145,6 +147,10 @@ int CameraModule::startThread() {
 
                 rightPrevImage.setImage(rightImage.getImage()->size(), rightImage.getImage()->data);
                 rightImage.setImage(depthImage.size(), depthImage.data);
+                DepthIntrinsics.set(lDepthIntrinsics);
+                //rs2::depth_frame df;
+                //df.get
+                //depthFrame.set(rs2::depth_frame(localDepthFrame.get_data()));
                 gotImage.set(true);
                 usleep(33000);
                 frameNum.set(counter);
