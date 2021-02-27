@@ -38,7 +38,7 @@ public:
     AsyncVar<bool> gotImage{false};
     AsyncVar<bool> imageForOdometryModuleUpdated{false};
     AsyncVar<int> frameNum{0};
-    AsyncVar<rs2::depth_frame>  depthFrame;
+    AsyncVar<rs2::depth_frame>  depthFrame{rs2::depth_frame(nullptr)};
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
 
 //#ifdef __arm__                                                           //dji modules installed only on raspberry pi

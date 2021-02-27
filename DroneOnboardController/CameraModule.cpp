@@ -148,6 +148,7 @@ int CameraModule::startThread() {
                 rightPrevImage.setImage(rightImage.getImage()->size(), rightImage.getImage()->data);
                 rightImage.setImage(depthImage.size(), depthImage.data);
                 DepthIntrinsics.set(lDepthIntrinsics);
+                depthFrame.set(localDepthFrame);
                 //rs2::depth_frame df;
                 //df.get
                 //depthFrame.set(rs2::depth_frame(localDepthFrame.get_data()));
