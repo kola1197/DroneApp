@@ -25,7 +25,8 @@ private:
     AsyncVar<bool> setZero{false};
     CameraModule* camModule;
     AsyncVar<bool> threadActive{true};
-    void updateCoordinats();
+    void updateCoordinatsMono();
+    void updateCoordinatsLidar();
     int frameNum = 0;
     cv::Mat E, R, t, mask;
     double prev_delta = 0;
@@ -43,6 +44,7 @@ private:
 
     double getAbsoluteScale(int frame_id, int sequence_id, double z_cal);
 
+    void calculateTime(std::vector<std::chrono::microseconds> timeShot);
 };
 
 

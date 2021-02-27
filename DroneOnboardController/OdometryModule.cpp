@@ -32,7 +32,7 @@ void OdometryModule::startThread()
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
-                updateCoordinats();
+                updateCoordinatsLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
             } else {
@@ -44,7 +44,33 @@ void OdometryModule::startThread()
     odometryThread.detach();
 }
 
-void OdometryModule::updateCoordinats()         //try mono
+void OdometryModule::updateCoordinatsLidar()
+{
+    std::vector<std::chrono::microseconds> timeShot;
+    std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
+    timeShot.push_back(startTime);
+
+
+
+
+
+
+    std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[last]
+    timeShot.push_back(endTime);
+    calculateTime(timeShot);
+}
+
+void OdometryModule::calculateTime(std::vector<std::chrono::microseconds> timeShot)
+{
+    double time = (timeShot[timeShot.size() -1] - timeShot[0]).count();
+    std::cout<<"Iteration time: "<<time<<std::endl;
+    for (int i=1;i<timeShot.size();i++)
+    {
+        std::cout<<i<<") "<<(timeShot[i] - timeShot[i-1]).count()<<"  ";
+    }
+}
+
+void OdometryModule::updateCoordinatsMono()         //try mono
 {
     std::chrono::microseconds timeOnStart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     std::chrono::microseconds timeOnSecondPartb = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
