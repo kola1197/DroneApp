@@ -1,7 +1,8 @@
 //
 // Created by nickolay on 09.06.2020.
 //
-
+#include <filesystem>
+#include <iostream>
 #include <thread>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -16,6 +17,8 @@
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <librealsense2/rs_advanced_mode.hpp>
 #include <librealsense2/rsutil.h>
+
+
 //#ifdef __arm__
 //e_vbus_index CameraModule::sensor_id = e_vbus4;
 //cv::Mat CameraModule::g_greyscale_image_left = cv::Mat::zeros(240,320,CV_8UC1);
@@ -105,12 +108,12 @@ int CameraModule::startThread() {
             float InputPixelAsFloat[2];
             InputPixelAsFloat[0] = 416;
             InputPixelAsFloat[1] = 316;
-            cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 10);
-            cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_RGB8, 10);
+            cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 30);
+            cfg.enable_stream(RS2_STREAM_COLOR, 1920, 1080, RS2_FORMAT_RGB8, 30);
 
             rs2::colorizer color_map;
             rs2::pipeline pipe;
-            auto MyPipelineProfile = pipe.start();
+            auto MyPipelineProfile = pipe.start(cfg);
             auto DepthStream = MyPipelineProfile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
             rs2_intrinsics lDepthIntrinsics = DepthStream.get_intrinsics();
             for (int i = 0; i<10; i++)//to skip first few frames when device just initiated
@@ -152,9 +155,21 @@ int CameraModule::startThread() {
                 depthImageMutex.lock();
                 depthFrame = localDepthFrame;
                 depthImageMutex.unlock();
-                //rs2::depth_frame df;
-                //df.get
-                //depthFrame.set(rs2::depth_frame(localDepthFrame.get_data()));
+                if (imageCaptureMode.get()){
+                    char buffer[PATH_MAX];
+                    getcwd(buffer, sizeof(buffer));
+                    std::string protoPath("./" + dirToSave+"/0/"+std::to_string(counter)+".jpg");
+                    std::string path("");
+                    for (int i=0;i<protoPath.size();i++)
+                    {
+                        if (protoPath[i] != ' ' && protoPath[i]!='\n')
+                        path.push_back(protoPath[i]);
+                    }
+                    ///home/nickolay/Code/DroneApp/cmake-build-debug/DroneOnboardController/SatFeb2718:57:352021/0
+                    std::cout<<path<<std::endl;
+                    cv::imwrite(path,colorImageA);
+                    //cv::imwrite(std::string(buffer) + dirToSave+"/0/"+std::to_string(counter)+".bmp",colorImageA);
+                }
                 gotImage.set(true);
                 usleep(33000);
                 frameNum.set(counter);
@@ -164,7 +179,6 @@ int CameraModule::startThread() {
         });
         thr.detach();
     }
-
     return result;                                  // 0 - ok, 1 - this testMode can not be set
 }
 
