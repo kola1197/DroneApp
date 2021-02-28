@@ -139,11 +139,11 @@ int CameraModule::startThread() {
                 const int hh = depth.as<rs2::video_frame>().get_height();
                 cv::Mat depthImage (cv::Size(ww, hh), CV_8UC3, (void*)depth.get_data(), cv::Mat::AUTO_STEP);
 
-                circle(depthImage, cv::Point(320, 240), 1, CV_RGB(0, 255, 0), 2);
+                //circle(depthImage, cv::Point(320, 240), 1, CV_RGB(0, 255, 0), 2);
 
-                imshow("color test", colorImage);
-                imshow("depth test", depthImage);
-                cv::waitKey(1);
+                //imshow("color test", colorImage);
+                //imshow("depth test", depthImage);
+                //cv::waitKey(1);
 
                 rightPrevImage.setImage(rightImage.getImage()->size(), rightImage.getImage()->data);
                 rightImage.setImage(depthImage.size(), depthImage.data);

@@ -50,11 +50,19 @@ void OdometryModule::updateCoordinatsLidar()
     std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
     timeShot.push_back(startTime);
 
+    camModule->depthImageMutex.lock();
+    cv::Mat colorImage = camModule->leftImage.getImage()->clone();
+    rs2::depth_frame depthFrame(camModule->depthFrame);
+    rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
+    camModule->depthImageMutex.unlock();
+    std::vector<cv::Point2f> points1, points2;
+    featureDetection(colorImage, points1);
 
-
-
-
-
+    for (int i=0;i<points1.size();i++){
+        circle(colorImage, points1[i], 3, CV_RGB(255, 0, 0), 2);
+    }
+    cv::imshow("features",colorImage);
+    cv::waitKey(1);
     std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[last]
     timeShot.push_back(endTime);
     calculateTime(timeShot);
@@ -62,12 +70,18 @@ void OdometryModule::updateCoordinatsLidar()
 
 void OdometryModule::calculateTime(std::vector<std::chrono::microseconds> timeShot)
 {
-    double time = (timeShot[timeShot.size() -1] - timeShot[0]).count();
-    std::cout<<"Iteration time: "<<time<<std::endl;
+    double delta_time = (timeShot[timeShot.size() -1] - timeShot[0]).count();
+    double avg_delta = (prev_delta + prev_prev_delta + delta_time) / 3;
+    fps = 1000000/avg_delta;
+    prev_prev_delta = prev_delta;
+    prev_delta = delta_time;
+    //std::cout<<"FPS: "<<fps<<"   last time - "<<delta_time<<std::endl;
+    std::cout<<"FPS: "<<fps<<" Iteration time: "<<delta_time<<std::endl;
     for (int i=1;i<timeShot.size();i++)
     {
         std::cout<<i<<") "<<(timeShot[i] - timeShot[i-1]).count()<<"  ";
     }
+    std::cout<<""<<std::endl;
 }
 
 void OdometryModule::updateCoordinatsMono()         //try mono
@@ -294,7 +308,7 @@ void OdometryModule::featureTracking(cv::Mat img_1, cv::Mat img_2, std::vector<c
 
 void OdometryModule::featureDetection(cv::Mat img_1, std::vector<cv::Point2f>& points1)	{   //uses FAST as of now, modify parameters as necessary
     std::vector<cv::KeyPoint> keypoints_1;
-    int fast_threshold = 20;
+    int fast_threshold = 40;
     bool nonmaxSuppression = true;
     FAST(img_1, keypoints_1, fast_threshold, nonmaxSuppression);
     cv::KeyPoint::convert(keypoints_1, points1, std::vector<int>());
