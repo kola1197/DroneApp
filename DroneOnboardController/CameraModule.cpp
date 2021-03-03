@@ -98,8 +98,8 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
             int counter = 0;
             std::cout<<"REALSENSE"<<std::endl;
-            namedWindow("color test", cv::WINDOW_AUTOSIZE);
-            namedWindow("depth test", cv::WINDOW_AUTOSIZE);
+            //namedWindow("color test", cv::WINDOW_AUTOSIZE);
+            //namedWindow("depth test", cv::WINDOW_AUTOSIZE);
             //cv::VideoCapture leftCamera("/dev/video0");
             //cv::VideoCapture rightCamera("/dev/video2");
             //cv::VideoCapture rightCamera(0);
@@ -127,7 +127,7 @@ int CameraModule::startThread() {
                 float distance = localDepthFrame.get_distance(320, 240);
 
                 rs2_deproject_pixel_to_point(ResultVector, &lDepthIntrinsics, InputPixelAsFloat, distance);
-                std::cout <<"DEPROJECTED POINT: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
+                //std::cout <<"DEPROJECTED POINT: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
                 //std::cout<<localDepthFrame.get_data()<<std::endl;
                 rs2::frame depth = localDepthFrame.apply_filter(color_map);
 

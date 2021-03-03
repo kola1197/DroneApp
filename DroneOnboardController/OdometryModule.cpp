@@ -32,7 +32,7 @@ void OdometryModule::startThread()
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
-                updateCoordinatsLidar();
+                updateCoordinatsMono();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
             } else {
@@ -56,13 +56,15 @@ void OdometryModule::updateCoordinatsLidar()
     rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
     camModule->depthImageMutex.unlock();
     std::vector<cv::Point2f> points1, points2;
-    featureDetection(colorImage, points1);
+    cv::Mat greyImage;
+    cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
 
-    for (int i=0;i<points1.size();i++){
-        circle(colorImage, points1[i], 3, CV_RGB(255, 0, 0), 2);
-    }
-    cv::imshow("features",colorImage);
-    cv::waitKey(1);
+cv:
+
+    cv::Ptr<cv::ORB> detectorORB = cv::ORB::create();
+    std::vector<cv::KeyPoint> keypoints1;
+    cv::Mat descriptors;
+
     std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[last]
     timeShot.push_back(endTime);
     calculateTime(timeShot);
@@ -100,9 +102,12 @@ void OdometryModule::updateCoordinatsMono()         //try mono
 
     double scale = 1.00;
     char text[100];
-    double focal = 718.8560;
+    char textAngles[100];
+    double focal = camModule->DepthIntrinsics.get().fx;//camModule->DepthIntrinsics.get();//718.8560;
     //cv::Point2d pp(607.1928, 185.2157);
-    cv::Point2d pp(320, 240);
+    cv::Point2d pp(camModule->DepthIntrinsics.get().ppx, camModule->DepthIntrinsics.get().ppy);
+    double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fx, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+
     cv::Mat img_1, img_2;
     //cv::Mat R_f, t_f; //the final rotation and tranlation vectors containing the
 
@@ -133,10 +138,10 @@ void OdometryModule::updateCoordinatsMono()         //try mono
             //std::cout<<"update coords 3"<<std::endl;
 
             if (!points1.empty() && !points2.empty()){
-                E = findEssentialMat(points2, points1, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
-
+                E = findEssentialMat(points2, points1, 1.0, pp, cv::RANSAC, 0.999, 1.0);
+                E = cv::Mat(3, 3, CV_64FC1, cameraM);
                 if (E.cols == 3 && E.rows == 3) {
-                    recoverPose(E, points2, points1, R, t, focal, pp, mask);
+                    recoverPose(E, points2, points1, R, t, 1.0, pp);
                     prevFeatures = points2;
                     prevImage = img_2.clone();
                     firstFrame = false;
@@ -158,9 +163,10 @@ void OdometryModule::updateCoordinatsMono()         //try mono
             featureTracking(prevImage_c, currImage_c, prevFeatures, currFeatures, status);
             timeOnSecondPartb = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
             if (!currFeatures.empty()) {
-                E = findEssentialMat(currFeatures, prevFeatures, focal, pp, cv::RANSAC, 0.999, 1.0, mask);
+                //E = findEssentialMat(currFeatures, prevFeatures, 1.0, pp, cv::RANSAC, 0.999, 1.0, mask);
+                E = cv::Mat(3, 3, CV_64FC1, cameraM);
                 if (E.cols == 3 && E.rows == 3) {
-                    recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
+                    recoverPose(E, currFeatures, prevFeatures, R, t, 1.0, pp);
                     timeOnThirdPart = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::system_clock::now().time_since_epoch());
 //            if (!R_f.data){
@@ -213,8 +219,11 @@ void OdometryModule::updateCoordinatsMono()         //try mono
                     coordinates.set(CvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
                     sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
                             t_f.at<double>(2));
+                    sprintf(textAngles, "Angles: alpha = %02f beta = %02f gamma = %02f", R_f.at<double>(0), R_f.at<double>(1),
+                            R_f.at<double>(2));
                     putText(traj, text, textOrg, fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
                     //std::cout<<text<<std::endl;
+                    std::cout<<textAngles<<std::endl;
                     //imshow( "Road facing camera", currImage_c );
                     imshow("Trajectory", traj);
                     //std::cout<<text<<std::endl;
@@ -308,7 +317,7 @@ void OdometryModule::featureTracking(cv::Mat img_1, cv::Mat img_2, std::vector<c
 
 void OdometryModule::featureDetection(cv::Mat img_1, std::vector<cv::Point2f>& points1)	{   //uses FAST as of now, modify parameters as necessary
     std::vector<cv::KeyPoint> keypoints_1;
-    int fast_threshold = 40;
+    int fast_threshold = 30;
     bool nonmaxSuppression = true;
     FAST(img_1, keypoints_1, fast_threshold, nonmaxSuppression);
     cv::KeyPoint::convert(keypoints_1, points1, std::vector<int>());

@@ -43,8 +43,13 @@ private:
     void featureDetection(cv::Mat img_1, std::vector<cv::Point2f> &points1);
 
     double getAbsoluteScale(int frame_id, int sequence_id, double z_cal);
+    std::vector<std::vector<cv::KeyPoint>> savedPoints;
+    std::vector<cv::Mat> savedDescriptors;
+    std::vector<cv::Point3f> pointsPoses;
 
     void calculateTime(std::vector<std::chrono::microseconds> timeShot);
+
+
 };
 
 
