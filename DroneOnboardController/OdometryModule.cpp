@@ -72,27 +72,41 @@ void OdometryModule::updateCoordinatsLidar()
     cv::Mat greyImage;
     cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
 
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot1
+
+
     int minHessian = 1000;
-    cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create( minHessian );
-    //int fast_threshold = 30;
+
+    int fast_threshold = 30;
     //bool nonmaxSuppression = true;
     std::vector<cv::KeyPoint> keypoints;
     //FAST(greyImage, keypoints, fast_threshold, nonmaxSuppression);
 
     cv::Mat descriptors;
     //detector->detect( greyImage, keypoints, descriptors );
-    detector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
+    cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create( minHessian );
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot2
+    //detector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
+    cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
+    fastDetector->detect(greyImage, keypoints);
+    detector->compute(greyImage, keypoints, descriptors);
 
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot3
     std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size" <<prevKeypoints.size() <<std::endl;
     std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size" <<prevDescriptors.size() <<std::endl;
 
-    if (prevKeypoints.size()>4 && keypoints.size()>4) {
-        std::vector<cv::DMatch> prettyGoodMatches;
 
+    if (prevKeypoints.size()>4 && keypoints.size()>4) {
+
+
+        std::vector<cv::DMatch> prettyGoodMatches;
         cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
-        //cv::BFMatcher matcher;
+        //cv::BFMatcher BFmatcher;
+        //BFmatcher.match(prevDescriptors, descriptors,  prettyGoodMatches);
+
         std::vector<std::vector<cv::DMatch>>  knn_matches;
         matcher->knnMatch(prevDescriptors, descriptors,  knn_matches,2);
+        timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot4
 
         double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fx, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
         E = cv::Mat(3, 3, CV_64FC1, cameraM);
@@ -108,6 +122,24 @@ void OdometryModule::updateCoordinatsLidar()
                 prettyGoodMatches.push_back(knn_matches[i][0]);
             }
         }
+
+        /*double max_dist = 0; double min_dist = 100;
+        for( int i = 0; i < prettyGoodMatches.size(); i++ )
+        {
+            double dist = prettyGoodMatches[i].distance;
+            if( dist < min_dist ) min_dist = dist;
+            if( dist > max_dist ) max_dist = dist;
+        }
+        for( int i = 0; i < prettyGoodMatches.size(); i++ )
+        {
+            if( prettyGoodMatches[i].distance < 1.2*min_dist )
+            {
+                goodMatches.push_back( prettyGoodMatches[i]);
+            }
+        }*/
+
+        timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot5
+
         /*for (size_t i = 0; i < prettyGoodMatches.size(); i++)
         {
             if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
@@ -116,7 +148,7 @@ void OdometryModule::updateCoordinatsLidar()
             }
         }*/
         std::vector<cv::Point2f> debugLines;
-        std::cout << "A total of found " << knn_matches.size() << " Group Match Point" << std::endl;
+        //std::cout << "A total of found " << knn_matches.size() << " Group Match Point" << std::endl;
         for (cv::DMatch m : prettyGoodMatches)
         {
             /*ushort d = d1.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)];
@@ -139,6 +171,8 @@ void OdometryModule::updateCoordinatsLidar()
                 debugLines.push_back(keypoints[m.trainIdx].pt);
             }
         }
+        timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot6
+
         cv::Mat imToShow = colorImage.clone();
         for (int i=0;i<pts_3d.size();i++ ){
             char tttt[100];
@@ -180,7 +214,6 @@ void OdometryModule::updateCoordinatsLidar()
 
     prevKeypoints = keypoints;
     prevDescriptors = descriptors;
-
     std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     timeShot.push_back(endTime);
     calculateTime(timeShot);
