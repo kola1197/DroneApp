@@ -153,6 +153,7 @@ int CameraModule::startThread() {
                 DepthIntrinsics.set(lDepthIntrinsics);
                 //depthFrame.set(localDepthFrame);
                 depthImageMutex.lock();
+                prevDepthFrame = depthFrame;
                 depthFrame = localDepthFrame;
                 depthImageMutex.unlock();
                 if (imageCaptureMode.get()){

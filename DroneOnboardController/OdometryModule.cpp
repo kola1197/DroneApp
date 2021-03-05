@@ -8,11 +8,17 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/xfeatures2d.hpp>
 #include <cv.hpp>
 #include <thread>
 #include <iostream>
 #include <fstream>
-
+#include <librealsense2/rsutil.h>
+#include "opencv2/highgui.hpp"
+#include "opencv2/features2d.hpp"
+#ifdef HAVE_OPENCV_XFEATURES2D
+#include "opencv2/xfeatures2d.hpp"
+#endif
 #define MIN_NUM_FEAT 2000
 
 OdometryModule::OdometryModule(CameraModule* _camModule)
@@ -32,7 +38,7 @@ void OdometryModule::startThread()
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
-                updateCoordinatsMono();
+                updateCoordinatsLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
             } else {
@@ -52,20 +58,97 @@ void OdometryModule::updateCoordinatsLidar()
 
     camModule->depthImageMutex.lock();
     cv::Mat colorImage = camModule->leftImage.getImage()->clone();
-    rs2::depth_frame depthFrame(camModule->depthFrame);
+    rs2::depth_frame depthFrame(camModule->prevDepthFrame);
     rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
     camModule->depthImageMutex.unlock();
-    std::vector<cv::Point2f> points1, points2;
     cv::Mat greyImage;
     cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
 
-cv:
+    int minHessian = 600;
+    cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create( minHessian );
+    std::vector<cv::KeyPoint> keypoints;
 
-    cv::Ptr<cv::ORB> detectorORB = cv::ORB::create();
-    std::vector<cv::KeyPoint> keypoints1;
     cv::Mat descriptors;
+    //detector->detect( greyImage, keypoints, descriptors );
+    detector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
 
-    std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[last]
+    //detector->detectAndCompute( img2, noArray(), keypoints2, descriptors2 );
+    std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size" <<prevKeypoints.size() <<std::endl;
+    std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size" <<prevDescriptors.size() <<std::endl;
+
+    if (prevKeypoints.size()>4 && keypoints.size()>4) {
+        std::vector<cv::DMatch> matches;
+
+        cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+        std::vector<cv::DMatch>  knn_matches;
+        matcher->match( prevDescriptors, descriptors,  knn_matches, 1 );
+        std::cout << "A total of found " << matches.size() << " Group Match Point" << std::endl;
+
+        double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fx, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+        E = cv::Mat(3, 3, CV_64FC1, cameraM);
+        std::vector<cv::Point3f> pts_3d;
+        std::vector<cv::Point2f> pts_2d;
+
+        for (cv::DMatch m : knn_matches)
+        {
+            /*ushort d = d1.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)];
+            if (d == 0)   // bad depth
+                continue;
+            float dd = d / 5000.0;*/
+            //cv::Point2d p1 = pixel2cam(prevKeypoints[m.queryIdx].pt, K); // Pixel coordinates to camera normalized coordinates
+            float ResultVector[3];
+            float InputPixelAsFloat[2] {prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y};
+            //int w = depthFrame.get_width();
+            int pt [2];
+            pt[0] = (int) (InputPixelAsFloat[0] * depthFrame.get_width()/1920);
+            pt[1] = (int) (InputPixelAsFloat[1] * depthFrame.get_height()/1080);
+            float distance = depthFrame.get_distance(pt[0],pt[1]);
+            if (distance<6 && distance > 0.1){
+                rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
+                pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
+                pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
+            }
+        }
+        cv::Mat imToShow = colorImage.clone();
+        for (int i=0;i<pts_3d.size();i++ ){
+            char tttt[100];
+            int fontFace = cv::FONT_HERSHEY_PLAIN;
+            double fontScale = 1;
+            int thickness = 1;
+
+            circle(imToShow, pts_2d[i], 1, CV_RGB(255, 0, 0), 2);
+            sprintf(tttt, "%02f, %02f, %02f", pts_3d[i].x,pts_3d[i].y,pts_3d[i].z);
+            putText(imToShow, tttt, cv::Point2d( pts_2d[i].x - 10, pts_2d[i].y - 10), fontFace, fontScale, cv::Scalar::all(255), thickness, 6);
+        }
+        cv::imshow("test", imToShow);
+        cv::waitKey(1);
+        std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
+        if (pts_3d.size()>3){
+            cv::Mat r, t;
+            solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+            cv::Mat R;
+            cv::Rodrigues(r, R);
+            if (t_f.empty() && R_f.empty()){
+                R_f = R.clone();
+                t_f = t.clone();
+            } else{
+                t_f = t_f + (R_f * t);
+                R_f = R * R_f;
+            }
+            //std::cout << "R=" << std::endl << R << std::endl;
+            //std::cout << "t=" << std::endl << t << std::endl;
+            char text[100];
+            sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
+                    t_f.at<double>(2));
+            coordinates.set(CvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+            std::cout << text<< std::endl;
+        }
+    }
+
+    prevKeypoints = keypoints;
+    prevDescriptors = descriptors;
+
+    std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     timeShot.push_back(endTime);
     calculateTime(timeShot);
 }
@@ -213,7 +296,6 @@ void OdometryModule::updateCoordinatsMono()         //try mono
                             std::chrono::system_clock::now().time_since_epoch());
                     int x = int(t_f.at<double>(0)) + 300;
                     int y = int(t_f.at<double>(2)) + 100;
-                    circle(traj, cv::Point(x, y), 1, CV_RGB(255, 0, 0), 2);
 
                     rectangle(traj, cv::Point(10, 30), cv::Point(550, 50), CV_RGB(0, 0, 0), CV_FILLED);
                     coordinates.set(CvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
@@ -221,6 +303,7 @@ void OdometryModule::updateCoordinatsMono()         //try mono
                             t_f.at<double>(2));
                     sprintf(textAngles, "Angles: alpha = %02f beta = %02f gamma = %02f", R_f.at<double>(0), R_f.at<double>(1),
                             R_f.at<double>(2));
+                    circle(traj, cv::Point(x, y), 1, CV_RGB(255, 0, 0), 2);
                     putText(traj, text, textOrg, fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
                     //std::cout<<text<<std::endl;
                     std::cout<<textAngles<<std::endl;

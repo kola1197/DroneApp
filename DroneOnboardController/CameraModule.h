@@ -41,6 +41,7 @@ public:
     //AsyncVar<rs2::depth_frame>  depthFrame{nullptr};
     std::mutex depthImageMutex;
     rs2::depth_frame depthFrame = rs2::depth_frame(nullptr);
+    rs2::depth_frame prevDepthFrame = rs2::depth_frame(nullptr);
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
 
 //#ifdef __arm__                                                           //dji modules installed only on raspberry pi
