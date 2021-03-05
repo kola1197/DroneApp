@@ -106,8 +106,8 @@ int CameraModule::startThread() {
             rs2::config cfg;
             float ResultVector[3];
             float InputPixelAsFloat[2];
-            InputPixelAsFloat[0] = 416;
-            InputPixelAsFloat[1] = 316;
+            InputPixelAsFloat[0] = 320;
+            InputPixelAsFloat[1] = 240;
             cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 30);
             cfg.enable_stream(RS2_STREAM_COLOR, 1920, 1080, RS2_FORMAT_RGB8, 30);
 
@@ -115,7 +115,9 @@ int CameraModule::startThread() {
             rs2::pipeline pipe;
             auto MyPipelineProfile = pipe.start(cfg);
             auto DepthStream = MyPipelineProfile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
+            auto ColorStream = MyPipelineProfile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
             rs2_intrinsics lDepthIntrinsics = DepthStream.get_intrinsics();
+            rs2_intrinsics lColorIntrinsics = ColorStream.get_intrinsics();
             for (int i = 0; i<10; i++)//to skip first few frames when device just initiated
                 auto frames = pipe.wait_for_frames();
             while (!threadStop.get()){
@@ -127,7 +129,7 @@ int CameraModule::startThread() {
                 float distance = localDepthFrame.get_distance(320, 240);
 
                 rs2_deproject_pixel_to_point(ResultVector, &lDepthIntrinsics, InputPixelAsFloat, distance);
-                //std::cout <<"DEPROJECTED POINT: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
+                std::cout <<"DEPROJECTED POINT before: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
                 //std::cout<<localDepthFrame.get_data()<<std::endl;
                 rs2::frame depth = localDepthFrame.apply_filter(color_map);
 
@@ -150,11 +152,14 @@ int CameraModule::startThread() {
 
                 rightPrevImage.setImage(rightImage.getImage()->size(), rightImage.getImage()->data);
                 rightImage.setImage(depthImage.size(), depthImage.data);
-                DepthIntrinsics.set(lDepthIntrinsics);
+                DepthIntrinsics.set(lColorIntrinsics);
                 //depthFrame.set(localDepthFrame);
                 depthImageMutex.lock();
                 prevDepthFrame = depthFrame;
                 depthFrame = localDepthFrame;
+                if (counter == 0){
+                    prevDepthFrame = depthFrame;
+                }
                 depthImageMutex.unlock();
                 if (imageCaptureMode.get()){
                     char buffer[PATH_MAX];

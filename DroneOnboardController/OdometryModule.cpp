@@ -61,35 +61,63 @@ void OdometryModule::updateCoordinatsLidar()
     rs2::depth_frame depthFrame(camModule->prevDepthFrame);
     rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
     camModule->depthImageMutex.unlock();
+    /*float testResultVector[3];
+    float testInputPixelAsFloat[2];
+    testInputPixelAsFloat[0] = 320;
+    testInputPixelAsFloat[1] = 240;
+    float testdistance = depthFrame.get_distance(320, 240);
+    rs2_deproject_pixel_to_point(testResultVector, &intrinsics, testInputPixelAsFloat, testdistance);
+    std::cout <<"DEPROJECTED POINT after: "<< "x = " << testResultVector[0] << ", y = " << testResultVector[1] << ", z = " << testResultVector[2] << std::endl;*/
+
     cv::Mat greyImage;
     cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
 
-    int minHessian = 600;
-    cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create( minHessian );
+    int minHessian = 1000;
+    cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create( minHessian );
+    //int fast_threshold = 30;
+    //bool nonmaxSuppression = true;
     std::vector<cv::KeyPoint> keypoints;
+    //FAST(greyImage, keypoints, fast_threshold, nonmaxSuppression);
 
     cv::Mat descriptors;
     //detector->detect( greyImage, keypoints, descriptors );
     detector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
 
-    //detector->detectAndCompute( img2, noArray(), keypoints2, descriptors2 );
     std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size" <<prevKeypoints.size() <<std::endl;
     std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size" <<prevDescriptors.size() <<std::endl;
 
     if (prevKeypoints.size()>4 && keypoints.size()>4) {
-        std::vector<cv::DMatch> matches;
+        std::vector<cv::DMatch> prettyGoodMatches;
 
         cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
-        std::vector<cv::DMatch>  knn_matches;
-        matcher->match( prevDescriptors, descriptors,  knn_matches, 1 );
-        std::cout << "A total of found " << matches.size() << " Group Match Point" << std::endl;
+        //cv::BFMatcher matcher;
+        std::vector<std::vector<cv::DMatch>>  knn_matches;
+        matcher->knnMatch(prevDescriptors, descriptors,  knn_matches,2);
 
         double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fx, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
         E = cv::Mat(3, 3, CV_64FC1, cameraM);
         std::vector<cv::Point3f> pts_3d;
         std::vector<cv::Point2f> pts_2d;
+        std::vector<cv::DMatch> goodMatches;
 
-        for (cv::DMatch m : knn_matches)
+        const float ratio_thresh = 0.55f;
+        for (size_t i = 0; i < knn_matches.size(); i++)
+        {
+            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+            {
+                prettyGoodMatches.push_back(knn_matches[i][0]);
+            }
+        }
+        /*for (size_t i = 0; i < prettyGoodMatches.size(); i++)
+        {
+            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+            {
+                goodMatches.push_back(knn_matches[i][0]);
+            }
+        }*/
+        std::vector<cv::Point2f> debugLines;
+        std::cout << "A total of found " << knn_matches.size() << " Group Match Point" << std::endl;
+        for (cv::DMatch m : prettyGoodMatches)
         {
             /*ushort d = d1.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)];
             if (d == 0)   // bad depth
@@ -107,6 +135,8 @@ void OdometryModule::updateCoordinatsLidar()
                 rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
                 pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
                 pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
+                debugLines.push_back(cv::Point2f(prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y));
+                debugLines.push_back(keypoints[m.trainIdx].pt);
             }
         }
         cv::Mat imToShow = colorImage.clone();
@@ -115,17 +145,20 @@ void OdometryModule::updateCoordinatsLidar()
             int fontFace = cv::FONT_HERSHEY_PLAIN;
             double fontScale = 1;
             int thickness = 1;
-
             circle(imToShow, pts_2d[i], 1, CV_RGB(255, 0, 0), 2);
             sprintf(tttt, "%02f, %02f, %02f", pts_3d[i].x,pts_3d[i].y,pts_3d[i].z);
             putText(imToShow, tttt, cv::Point2d( pts_2d[i].x - 10, pts_2d[i].y - 10), fontFace, fontScale, cv::Scalar::all(255), thickness, 6);
+        }
+        for (int i =0;i<debugLines.size();i=i+2){
+            cv::line(imToShow,debugLines[i],debugLines[i+1], CV_RGB(0, 255, 0),3);
         }
         cv::imshow("test", imToShow);
         cv::waitKey(1);
         std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
         if (pts_3d.size()>3){
             cv::Mat r, t;
-            solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+            //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
             cv::Mat R;
             cv::Rodrigues(r, R);
             if (t_f.empty() && R_f.empty()){
