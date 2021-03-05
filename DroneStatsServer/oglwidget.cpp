@@ -103,7 +103,7 @@ void OGLWidget::resizeGL(int w, int h)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     //gluPerspective(45, (float)9/16, 1.0, 1.0);
-    gluOrtho2D(-w*2,w*2,h*2,-h*2);
+    gluOrtho2D(-w/20,w/20,h/20,-h/20);
     //gluOrtho2D(0,1600,900,0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
