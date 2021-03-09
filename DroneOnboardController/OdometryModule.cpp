@@ -58,7 +58,7 @@ void OdometryModule::updateCoordinatsLidar()
 
     camModule->depthImageMutex.lock();
     cv::Mat colorImage = camModule->leftImage.getImage()->clone();
-    rs2::depth_frame depthFrame(camModule->prevDepthFrame);
+    rs2::depth_frame depthFrame(camModule->depthFrame);
     rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
     camModule->depthImageMutex.unlock();
     /*float testResultVector[3];
@@ -75,21 +75,23 @@ void OdometryModule::updateCoordinatsLidar()
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot1
 
 
-    int minHessian = 1000;
+    int minHessian = 700;
 
-    int fast_threshold = 30;
+    int fast_threshold = 35;
     //bool nonmaxSuppression = true;
     std::vector<cv::KeyPoint> keypoints;
     //FAST(greyImage, keypoints, fast_threshold, nonmaxSuppression);
 
     cv::Mat descriptors;
-    //detector->detect( greyImage, keypoints, descriptors );
-    cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create( minHessian );
+    //siftDetector->detect( greyImage, keypoints, descriptors );
+    //cv::Ptr<cv::xfeatures2d::SIFT> siftDetector = cv::xfeatures2d::SIFT::create(minHessian );
+    cv::Ptr<cv::xfeatures2d::SURF> siftDetector = cv::xfeatures2d::SURF::create(minHessian );
+
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot2
-    //detector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
+    siftDetector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
-    fastDetector->detect(greyImage, keypoints);
-    detector->compute(greyImage, keypoints, descriptors);
+    //fastDetector->detect(greyImage, keypoints);
+    //siftDetector->compute(greyImage, keypoints, descriptors);
 
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot3
     std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size" <<prevKeypoints.size() <<std::endl;
@@ -160,9 +162,9 @@ void OdometryModule::updateCoordinatsLidar()
             float InputPixelAsFloat[2] {prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y};
             //int w = depthFrame.get_width();
             int pt [2];
-            pt[0] = (int) (InputPixelAsFloat[0] * depthFrame.get_width()/1920);
-            pt[1] = (int) (InputPixelAsFloat[1] * depthFrame.get_height()/1080);
-            float distance = depthFrame.get_distance(pt[0],pt[1]);
+            pt[0] = (int) (InputPixelAsFloat[0] * prevDepthFrame.get_width()/greyImage.cols);
+            pt[1] = (int) (InputPixelAsFloat[1] * prevDepthFrame.get_height()/greyImage.rows);
+            float distance = prevDepthFrame.get_distance(pt[0],pt[1]);
             if (distance<6 && distance > 0.1){
                 rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
                 pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
@@ -188,9 +190,11 @@ void OdometryModule::updateCoordinatsLidar()
         }
         cv::imshow("test", imToShow);
         cv::waitKey(1);
+
         std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
         if (pts_3d.size()>3){
             cv::Mat r, t;
+            cv::Mat dr, dt;
             cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
             //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
             cv::Mat R;
@@ -199,8 +203,13 @@ void OdometryModule::updateCoordinatsLidar()
                 R_f = R.clone();
                 t_f = t.clone();
             } else{
-                t_f = t_f + (R_f * t);
-                R_f = R * R_f;
+                dt = t_f + (R_f * t);
+                dr = R * R_f;
+                if (std::abs(t_f.at<double>(0) - dt.at<double>(0)) < 2 && std::abs(t_f.at<double>(1) - dt.at<double>(1)) < 2
+                && std::abs(t_f.at<double>(2) - dt.at<double>(2)) < 2){
+                    t_f = t_f + (R_f * t);
+                    R_f = R * R_f;
+                }
             }
             //std::cout << "R=" << std::endl << R << std::endl;
             //std::cout << "t=" << std::endl << t << std::endl;
@@ -214,6 +223,7 @@ void OdometryModule::updateCoordinatsLidar()
 
     prevKeypoints = keypoints;
     prevDescriptors = descriptors;
+    prevDepthFrame = depthFrame;
     std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     timeShot.push_back(endTime);
     calculateTime(timeShot);

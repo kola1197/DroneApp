@@ -46,7 +46,7 @@ private:
     std::vector<cv::KeyPoint> prevKeypoints;
     cv::Mat prevDescriptors;
     std::vector<cv::Point3f> pointsPoses;
-
+    rs2::depth_frame prevDepthFrame = rs2::depth_frame(nullptr);
     void calculateTime(std::vector<std::chrono::microseconds> timeShot);
 
 

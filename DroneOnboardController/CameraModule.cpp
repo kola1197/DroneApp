@@ -109,7 +109,7 @@ int CameraModule::startThread() {
             InputPixelAsFloat[0] = 320;
             InputPixelAsFloat[1] = 240;
             cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 30);
-            cfg.enable_stream(RS2_STREAM_COLOR, 1920, 1080, RS2_FORMAT_RGB8, 30);
+            cfg.enable_stream(RS2_STREAM_COLOR, 960, 540, RS2_FORMAT_RGB8, 30);
 
             rs2::colorizer color_map;
             rs2::pipeline pipe;
@@ -155,11 +155,11 @@ int CameraModule::startThread() {
                 DepthIntrinsics.set(lColorIntrinsics);
                 //depthFrame.set(localDepthFrame);
                 depthImageMutex.lock();
-                prevDepthFrame = depthFrame;
+                //prevDepthFrame = depthFrame;
                 depthFrame = localDepthFrame;
-                if (counter == 0){
-                    prevDepthFrame = depthFrame;
-                }
+                //if (counter == 0){
+                //    prevDepthFrame = depthFrame;
+                //}
                 depthImageMutex.unlock();
                 if (imageCaptureMode.get()){
                     char buffer[PATH_MAX];
