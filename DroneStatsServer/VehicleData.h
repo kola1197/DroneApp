@@ -6,7 +6,8 @@
 #define DRONEAPP_VEHICLEDATA_H
 
 
-#include <cv.h>
+
+#include <opencv2/core/core_c.h>
 #include "../Utils/AsyncVar.h"
 enum VehicleMode{QUADROCOPTER = 0, CAR = 1};
 

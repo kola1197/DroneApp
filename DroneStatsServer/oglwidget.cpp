@@ -137,7 +137,7 @@ void OGLWidget::getCoordinatespoint(CvPoint3D32f point)
     pointsMutex.lock();
     if (!hasNewPoint){
         CvPoint3D32f lastpoint = points[points.size() - 1];
-        CvPoint3D32f diff (lastpoint.x - point.x,lastpoint.y - point.y,lastpoint.z - point.z);
+        CvPoint3D32f diff =  cvPoint3D32f(lastpoint.x - point.x,lastpoint.y - point.y,lastpoint.z - point.z);
         hasNewPoint = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z > 1.0;
     }
     if (hasNewPoint){

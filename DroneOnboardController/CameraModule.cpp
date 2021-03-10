@@ -28,7 +28,6 @@
 //#endif
 
 #include <unistd.h>
-#include <opencv/cv.hpp>
 
 inline bool exists (const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );

@@ -6,10 +6,10 @@
 #define DRONEAPP_ODOMETRYMODULE_H
 
 //#include "StatsServer.h"
-#include <cv.h>
 #include "CameraModule.h"
 #include "../Utils/AsyncVar.h"
 #include "PX4Comannder.h"
+#include "opencv2/core/types_c.h"
 
 class OdometryModule {
 public:

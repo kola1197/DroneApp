@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QOpenGLWidget>
 #include <mutex>
-#include <cv.h>
+#include "opencv2/core/types_c.h"
 
 class OGLWidget : public QOpenGLWidget
  {

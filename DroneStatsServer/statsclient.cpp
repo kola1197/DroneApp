@@ -9,8 +9,10 @@
 #include <string.h>
 #include <QTimer>
 #include <thread>
-#include <opencv/cv.hpp>
 #include <QtGui/QImage>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include "opencv2/core/types_c.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -274,7 +276,7 @@ void StatsClient::getSystemMessage()
             break;
         case SystemMessage::COORDINATES:
             //CvPoint3D32f point(m.f[0],m.f[1],m.f[2]);
-            emit transmitCoordinates(CvPoint3D32f(m.f[0],m.f[1],m.f[2]));
+            emit transmitCoordinates(cvPoint3D32f(m.f[0],m.f[1],m.f[2]));
             //std::cout<<"Point x:"<<m.f[0]<<" y:"<<m.f[1]<<" z:"<<m.f[2]<<std::endl;
             break;
         case SystemMessage::PX_CONNECTION_STATUS:

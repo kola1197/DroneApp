@@ -9,17 +9,18 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/xfeatures2d.hpp>
-#include <cv.hpp>
 #include <thread>
 #include <iostream>
 #include <fstream>
 #include <librealsense2/rsutil.h>
+#include <opencv2/calib3d.hpp>
 #include "opencv2/highgui.hpp"
 #include "opencv2/features2d.hpp"
 #ifdef HAVE_OPENCV_XFEATURES2D
 #include "opencv2/xfeatures2d.hpp"
 #endif
 #define MIN_NUM_FEAT 2000
+#include <opencv2/video/tracking.hpp>
 
 OdometryModule::OdometryModule(CameraModule* _camModule)
 {
@@ -216,7 +217,7 @@ void OdometryModule::updateCoordinatsLidar()
             char text[100];
             sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
                     t_f.at<double>(2));
-            coordinates.set(CvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+            coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
             std::cout << text<< std::endl;
         }
     }
@@ -373,8 +374,8 @@ void OdometryModule::updateCoordinatsMono()         //try mono
                     int x = int(t_f.at<double>(0)) + 300;
                     int y = int(t_f.at<double>(2)) + 100;
 
-                    rectangle(traj, cv::Point(10, 30), cv::Point(550, 50), CV_RGB(0, 0, 0), CV_FILLED);
-                    coordinates.set(CvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+                    rectangle(traj, cv::Point(10, 30), cv::Point(550, 50), CV_RGB(0, 0, 0), cv::FILLED);
+                    coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
                     sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
                             t_f.at<double>(2));
                     sprintf(textAngles, "Angles: alpha = %02f beta = %02f gamma = %02f", R_f.at<double>(0), R_f.at<double>(1),

@@ -5,11 +5,11 @@
 #include <mutex>
 #include "QObject"
 #include <sys/socket.h>
-#include <cv.h>
 
 #include "../Utils/Messages.h"
 #include "../Utils/MutexBool.h"
 #include "VehicleData.h"
+#include "opencv2/core/types_c.h"
 
 /*
 enum MessageType { LEFT_IMAGE, RIGHT_IMAGE, SYSTEM_MESSAGE, EMPTY };

@@ -3,12 +3,13 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <cv.hpp>
 #include "depthmapcalibrator.h"
 #include "ui_depthmapcalibrator.h"
 #include "OdometryModule.h"
 #include "opencv2/ximgproc/disparity_filter.hpp"
 #include <iostream>
+#include <opencv2/highgui.hpp>
+
 
 DepthMapCalibrator::DepthMapCalibrator(QWidget *parent) :
     QMainWindow(parent),

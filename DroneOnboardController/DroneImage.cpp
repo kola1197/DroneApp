@@ -3,7 +3,7 @@
 //
 
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgcodecs/imgcodecs_c.h>
+//#include <opencv2/imgcodecs/imgcodecs_c.h>
 #include <iostream>
 #include <opencv2/imgproc.hpp>
 #include "DroneImage.h"
@@ -12,7 +12,7 @@
 DroneImage::DroneImage()
 {
 
-    data = cv::imread("../../testim.jpg", CV_LOAD_IMAGE_COLOR);
+    data = cv::imread("../../testim.jpg", cv::IMREAD_COLOR);//CV_LOAD_IMAGE_COLOR);
     cv::resize(data, data, cv::Size(320, 240), 0, 0, cv::INTER_CUBIC);
     setImage(data.size(),data.data);
 }
