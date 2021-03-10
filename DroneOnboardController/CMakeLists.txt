@@ -6,16 +6,7 @@ SET(CMAKE_CXX_FLAGS -pthread)
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
-option(USE_OPENCV "Should compile with OpenCV" YES)
-IF ( USE_OPENCV )
-    MESSAGE( STATUS "Including OpenCV on DroneOnboardController build" )
-    find_package( OpenCV 3.4 REQUIRED)
-    if (OpenCV_LIBS)
-        add_definitions(-DWITH_OPENCV)
-    else()
-        message("You requested OPENCV in the build, but none was found.")
-    endif()
-ENDIF ()
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -30,6 +21,16 @@ set(CMAKE_AUTORCC ON)
 #TARGET_LINK_LIBRARIES( ${execName})
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
     message("-- ARM architecture detected")
+    option(USE_OPENCV "Should compile with OpenCV" YES)
+    IF ( USE_OPENCV )
+        MESSAGE( STATUS "Including OpenCV on DroneOnboardController build" )
+        find_package( OpenCV 4.5.1 REQUIRED)
+        if (OpenCV_LIBS)
+            add_definitions(-DWITH_OPENCV)
+        else()
+            message("You requested OPENCV in the build, but none was found.")
+        endif()
+    ENDIF ()
     add_executable(
         DroneOnboardController
         main.cpp
@@ -39,9 +40,9 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
         CameraModule.h
         DroneImage.cpp
         DroneImage.h
-        DJI_guidance.h
-        DJI_utility.h
-        DJI_utility.cpp
+        #DJI_guidance.h
+        #DJI_utility.h
+        #DJI_utility.cpp
         ../Utils/MutexBool.cpp
         ../Utils/MutexBool.h
         ../Utils/Messages.cpp
@@ -55,6 +56,16 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
 ELSE()
     message("-- x64 architecture detected")
+    option(USE_OPENCV "Should compile with OpenCV" YES)
+    IF ( USE_OPENCV )
+        MESSAGE( STATUS "Including OpenCV on DroneOnboardController build" )
+        find_package( OpenCV 3.4 REQUIRED)
+        if (OpenCV_LIBS)
+            add_definitions(-DWITH_OPENCV)
+        else()
+            message("You requested OPENCV in the build, but none was found.")
+        endif()
+    ENDIF ()
     #set(CMAKE_AUTOUIC ON)
     find_package(Qt5 COMPONENTS Widgets REQUIRED)
     find_package(realsense2 REQUIRED)
