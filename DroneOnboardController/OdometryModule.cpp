@@ -89,10 +89,10 @@ void OdometryModule::updateCoordinatsLidar()
     cv::Ptr<cv::xfeatures2d::SURF> siftDetector = cv::xfeatures2d::SURF::create(minHessian );
 
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot2
-    siftDetector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
+    //siftDetector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
-    //fastDetector->detect(greyImage, keypoints);
-    //siftDetector->compute(greyImage, keypoints, descriptors);
+    fastDetector->detect(greyImage, keypoints);
+    siftDetector->compute(greyImage, keypoints, descriptors);
 
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot3
     std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size" <<prevKeypoints.size() <<std::endl;
@@ -175,7 +175,7 @@ void OdometryModule::updateCoordinatsLidar()
             }
         }
         timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot6
-
+/*
         cv::Mat imToShow = colorImage.clone();
         for (int i=0;i<pts_3d.size();i++ ){
             char tttt[100];
@@ -191,7 +191,7 @@ void OdometryModule::updateCoordinatsLidar()
         }
         cv::imshow("test", imToShow);
         cv::waitKey(1);
-
+*/
         std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
         if (pts_3d.size()>3){
             cv::Mat r, t;
