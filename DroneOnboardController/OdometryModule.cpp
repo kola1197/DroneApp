@@ -21,6 +21,9 @@
 #endif
 #define MIN_NUM_FEAT 2000
 #include <opencv2/video/tracking.hpp>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 OdometryModule::OdometryModule(CameraModule* _camModule)
 {
@@ -39,7 +42,7 @@ void OdometryModule::startThread()
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
-                updateCoordinatsLidar();
+                updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
             } else {
@@ -49,6 +52,296 @@ void OdometryModule::startThread()
         std::cout<<"Odometry thread stopped"<<std::endl;
     });
     odometryThread.detach();
+}
+
+void OdometryModule::updateCoordinatsORBLidar(){
+    std::vector<std::chrono::microseconds> timeShot;
+    std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
+    timeShot.push_back(startTime);
+
+    camModule->depthImageMutex.lock();
+    cv::Mat colorImage = camModule->leftImage.getImage()->clone();
+    rs2::depth_frame depthFrame(camModule->depthFrame);
+    rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
+    camModule->depthImageMutex.unlock();
+    /*float testResultVector[3];
+    float testInputPixelAsFloat[2];
+    testInputPixelAsFloat[0] = 320;
+    testInputPixelAsFloat[1] = 240;
+    float testdistance = depthFrame.get_distance(320, 240);
+    rs2_deproject_pixel_to_point(testResultVector, &intrinsics, testInputPixelAsFloat, testdistance);
+    std::cout <<"DEPROJECTED POINT after: "<< "x = " << testResultVector[0] << ", y = " << testResultVector[1] << ", z = " << testResultVector[2] << std::endl;*/
+
+    cv::Mat greyImage;
+    cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
+
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot1
+
+
+    int minHessian = 700;
+
+    int fast_threshold = 30;
+    //bool nonmaxSuppression = true;
+    std::vector<cv::KeyPoint> keypoints;
+    //FAST(greyImage, keypoints, fast_threshold, nonmaxSuppression);
+
+    cv::Mat descriptors;
+    //siftDetector->detect( greyImage, keypoints, descriptors );
+    //cv::Ptr<cv::xfeatures2d::SIFT> siftDetector = cv::xfeatures2d::SIFT::create(minHessian );
+
+    auto detector_ = cv::ORB::create(3000);
+    auto descriptor_ = cv::ORB::create();
+    auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
+    cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
+    fastDetector->detect(greyImage, keypoints);
+
+    //detector_->detect(greyImage, keypoints);
+    adaptive_non_maximal_suppresion(keypoints, 500);
+    descriptor_->compute(greyImage, keypoints, descriptors);
+
+
+    //cv::Ptr<cv::xfeatures2d::SURF> siftDetector = cv::xfeatures2d::SURF::create(minHessian );
+
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot2
+    //siftDetector->detectAndCompute( greyImage, cv::noArray(), keypoints, descriptors );
+    //siftDetector->compute(greyImage, keypoints, descriptors);
+
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot3
+    std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size " <<prevKeypoints.size() <<std::endl;
+    std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size " <<prevDescriptors.size() <<std::endl;
+
+
+    if (prevKeypoints.size()>4 && keypoints.size()>4) {
+
+
+        std::vector<cv::DMatch> prettyGoodMatches;
+        //cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+
+        //std::vector<std::vector<cv::DMatch>>  knn_matches;
+        //matcher->knnMatch(prevDescriptors, descriptors,  knn_matches,2);
+        timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot4
+
+        double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fx, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+        E = cv::Mat(3, 3, CV_64FC1, cameraM);
+        std::vector<cv::Point3f> pts_3d;
+        std::vector<cv::Point2f> pts_2d;
+        std::vector<cv::DMatch> goodMatches;
+
+
+        matcher_crosscheck_->match(prevDescriptors, descriptors, goodMatches);
+
+        // calculate the min/max distance
+        /*auto min_max = minmax_element(prettyGoodMatches.begin(), prettyGoodMatches.end(), [](const auto &lhs, const auto &rhs) {
+            return lhs.distance < rhs.distance;
+        });*/
+        auto min_max = minmax_element(goodMatches.begin(), goodMatches.end());
+        auto min_element = min_max.first;
+        auto max_element = min_max.second;
+        // std::cout << "Min distance: " << min_element->distance << std::endl;
+        // std::cout << "Max distance: " << max_element->distance << std::endl;
+
+        // threshold: distance should be smaller than two times of min distance or a give threshold
+        double frame_gap = 1;//frame_current_.frame_id_ - frame_last_.frame_id_;
+        for (int i = 0; i < goodMatches.size(); i++)
+        {
+            if (goodMatches.at(i).distance <= std::max(2.0 * min_element->distance, 30.0 * frame_gap))
+            {
+                prettyGoodMatches.push_back(goodMatches.at(i));
+            }
+        }
+
+        /*const float ratio_thresh = 0.60f;
+        for (size_t i = 0; i < knn_matches.size(); i++)
+        {
+            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+            {
+                prettyGoodMatches.push_back(knn_matches[i][0]);
+            }
+        }*/
+
+        /*double max_dist = 0; double min_dist = 100;
+        for( int i = 0; i < prettyGoodMatches.size(); i++ )
+        {
+            double dist = prettyGoodMatches[i].distance;
+            if( dist < min_dist ) min_dist = dist;
+            if( dist > max_dist ) max_dist = dist;
+        }
+        for( int i = 0; i < prettyGoodMatches.size(); i++ )
+        {
+            if( prettyGoodMatches[i].distance < 1.2*min_dist )
+            {
+                goodMatches.push_back( prettyGoodMatches[i]);
+            }
+        }*/
+
+        std::vector<float> sortedDiff;
+        for (cv::DMatch m : prettyGoodMatches) {
+            sortedDiff.push_back(sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+                                      + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y)));
+            //sortedDiff.push_back(m.distance);
+        }
+        std::sort(sortedDiff.begin(),sortedDiff.end());
+        float medianDistance = 1;
+        if (sortedDiff.size()>1) {
+            medianDistance = sortedDiff[(int) sortedDiff.size() / 2];
+        }
+        timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot5
+
+        /*for (size_t i = 0; i < prettyGoodMatches.size(); i++)
+        {
+            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+            {
+                goodMatches.push_back(knn_matches[i][0]);
+            }
+        }*/
+        std::vector<cv::Point2f> debugLines;
+        float distanceTreshold = 3.5f;
+        //std::cout << "A total of found " << knn_matches.size() << " Group Match Point" << std::endl;
+        for (cv::DMatch m : prettyGoodMatches)
+        {
+            /*ushort d = d1.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)];
+            if (d == 0)   // bad depth
+                continue;
+            float dd = d / 5000.0;*/
+            //cv::Point2d p1 = pixel2cam(prevKeypoints[m.queryIdx].pt, K); // Pixel coordinates to camera normalized coordinates
+            float ResultVector[3];
+            float InputPixelAsFloat[2] {prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y};
+            //int w = depthFrame.get_width();
+            int pt [2];
+            pt[0] = (int) (InputPixelAsFloat[0] * prevDepthFrame.get_width()/greyImage.cols);
+            pt[1] = (int) (InputPixelAsFloat[1] * prevDepthFrame.get_height()/greyImage.rows);
+            float distance = prevDepthFrame.get_distance(pt[0],pt[1]);
+            float mDist = sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+                               + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y));
+            if (distance<6 && distance > 0.1 /*&& mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold)*/ ){
+                rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
+                pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
+                pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
+                debugLines.push_back(cv::Point2f(prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y));
+                debugLines.push_back(keypoints[m.trainIdx].pt);
+            }
+        }
+        timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot6
+#ifdef x64
+        cv::Mat imToShow = colorImage.clone();
+        for (int i=0;i<pts_3d.size();i++ ){
+            char tttt[100];
+            int fontFace = cv::FONT_HERSHEY_PLAIN;
+            double fontScale = 1;
+            int thickness = 1;
+            circle(imToShow, pts_2d[i], 1, CV_RGB(255, 0, 0), 2);
+            sprintf(tttt, "%02f, %02f, %02f", pts_3d[i].x,pts_3d[i].y,pts_3d[i].z);
+            putText(imToShow, tttt, cv::Point2d( pts_2d[i].x - 10, pts_2d[i].y - 10), fontFace, fontScale, cv::Scalar::all(255), thickness, 6);
+        }
+        for (int i =0;i<debugLines.size();i=i+2){
+            cv::line(imToShow,debugLines[i],debugLines[i+1], CV_RGB(0, 255, 0),3);
+        }
+        cv::imshow("test", imToShow);
+        cv::waitKey(1);
+#endif
+        std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
+        if (pts_3d.size()>7 && pts_2d.size()>7){
+            cv::Mat r, t;
+            cv::Mat dr, dt;
+            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false,  100, 4.0, 0.99);
+            //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+            cv::Mat R;
+            cv::Rodrigues(r, R);
+            if (t_f.empty() && R_f.empty()){
+                R_f = R.clone();
+                t_f = t.clone();
+            } else{
+                dt = t_f + (R_f * t);
+                dr = R * R_f;
+                if (std::abs(t_f.at<double>(0) - dt.at<double>(0)) < 2 && std::abs(t_f.at<double>(1) - dt.at<double>(1)) < 2
+                    && std::abs(t_f.at<double>(2) - dt.at<double>(2)) < 2){
+                    t_f = t_f + (R_f * t);
+                    R_f = R * R_f;
+                }
+            }
+            //std::cout << "R=" << std::endl << R << std::endl;
+            //std::cout << "t=" << std::endl << t << std::endl;
+            char text[100];
+            sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
+                    t_f.at<double>(2));
+            coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+            std::cout << text<< std::endl;
+        }
+        else {
+            framesDropped++;
+        }
+        framesCounter ++;
+        std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
+    }
+
+    prevKeypoints = keypoints;
+    prevDescriptors = descriptors;
+    prevDepthFrame = depthFrame;
+    std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    timeShot.push_back(endTime);
+    calculateTime(timeShot);
+}
+
+void OdometryModule::adaptive_non_maximal_suppresion(std::vector<cv::KeyPoint> &keypoints, const int num)
+{
+    // if number of keypoints is already lower than the threshold, return
+    if (keypoints.size() < num)
+    {
+        return;
+    }
+
+    // sort the keypoints according to its reponse (strength)
+    std::sort(keypoints.begin(), keypoints.end(), [&](const cv::KeyPoint &lhs, const cv::KeyPoint &rhs) {
+        return lhs.response > rhs.response;
+    });
+
+    // vector for store ANMS points
+    std::vector<cv::KeyPoint> ANMSpt;
+
+    std::vector<double> rad_i;
+    rad_i.resize(keypoints.size());
+
+    std::vector<double> rad_i_sorted;
+    rad_i_sorted.resize(keypoints.size());
+
+    // robust coefficient: 1/0.9 = 1.1
+    const float c_robust = 1.11;
+
+    // computing the suppression radius for each feature (strongest overall has radius of infinity)
+    // the smallest distance to another point that is significantly stronger (based on a robustness parameter)
+    for (int i = 0; i < keypoints.size(); ++i)
+    {
+        const float response = keypoints.at(i).response * c_robust;
+
+        // maximum finit number of double
+        double radius = std::numeric_limits<double>::max();
+
+        for (int j = 0; j < i && keypoints.at(j).response > response; ++j)
+        {
+            radius = std::min(radius, cv::norm(keypoints.at(i).pt - keypoints.at(j).pt));
+        }
+
+        rad_i.at(i) = radius;
+        rad_i_sorted.at(i) = radius;
+    }
+
+    // sort it
+    std::sort(rad_i_sorted.begin(), rad_i_sorted.end(), [&](const double &lhs, const double &rhs) {
+        return lhs > rhs;
+    });
+
+    // find the final radius
+    const double final_radius = rad_i_sorted.at(num - 1);
+    for (int i = 0; i < rad_i.size(); ++i)
+    {
+        if (rad_i.at(i) >= final_radius)
+        {
+            ANMSpt.push_back(keypoints.at(i));
+        }
+    }
+
+    // swap address to keypoints, O(1) time
+    keypoints.swap(ANMSpt);
 }
 
 void OdometryModule::updateCoordinatsLidar()
@@ -78,7 +371,7 @@ void OdometryModule::updateCoordinatsLidar()
 
     int minHessian = 700;
 
-    int fast_threshold = 35;
+    int fast_threshold = 30;
     //bool nonmaxSuppression = true;
     std::vector<cv::KeyPoint> keypoints;
     //FAST(greyImage, keypoints, fast_threshold, nonmaxSuppression);
@@ -95,8 +388,8 @@ void OdometryModule::updateCoordinatsLidar()
     siftDetector->compute(greyImage, keypoints, descriptors);
 
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot3
-    std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size" <<prevKeypoints.size() <<std::endl;
-    std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size" <<prevDescriptors.size() <<std::endl;
+    std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size " <<prevKeypoints.size() <<std::endl;
+    std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size " <<prevDescriptors.size() <<std::endl;
 
 
     if (prevKeypoints.size()>4 && keypoints.size()>4) {
@@ -104,8 +397,6 @@ void OdometryModule::updateCoordinatsLidar()
 
         std::vector<cv::DMatch> prettyGoodMatches;
         cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
-        //cv::BFMatcher BFmatcher;
-        //BFmatcher.match(prevDescriptors, descriptors,  prettyGoodMatches);
 
         std::vector<std::vector<cv::DMatch>>  knn_matches;
         matcher->knnMatch(prevDescriptors, descriptors,  knn_matches,2);
@@ -117,7 +408,7 @@ void OdometryModule::updateCoordinatsLidar()
         std::vector<cv::Point2f> pts_2d;
         std::vector<cv::DMatch> goodMatches;
 
-        const float ratio_thresh = 0.55f;
+        const float ratio_thresh = 0.60f;
         for (size_t i = 0; i < knn_matches.size(); i++)
         {
             if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
@@ -141,6 +432,17 @@ void OdometryModule::updateCoordinatsLidar()
             }
         }*/
 
+        std::vector<float> sortedDiff;
+        for (cv::DMatch m : prettyGoodMatches) {
+            sortedDiff.push_back(sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+            + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y)));
+            //sortedDiff.push_back(m.distance);
+        }
+        std::sort(sortedDiff.begin(),sortedDiff.end());
+        float medianDistance = 1;
+        if (sortedDiff.size()>1) {
+             medianDistance = sortedDiff[(int) sortedDiff.size() / 2];
+        }
         timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot5
 
         /*for (size_t i = 0; i < prettyGoodMatches.size(); i++)
@@ -151,6 +453,7 @@ void OdometryModule::updateCoordinatsLidar()
             }
         }*/
         std::vector<cv::Point2f> debugLines;
+        float distanceTreshold = 3.5f;
         //std::cout << "A total of found " << knn_matches.size() << " Group Match Point" << std::endl;
         for (cv::DMatch m : prettyGoodMatches)
         {
@@ -166,7 +469,9 @@ void OdometryModule::updateCoordinatsLidar()
             pt[0] = (int) (InputPixelAsFloat[0] * prevDepthFrame.get_width()/greyImage.cols);
             pt[1] = (int) (InputPixelAsFloat[1] * prevDepthFrame.get_height()/greyImage.rows);
             float distance = prevDepthFrame.get_distance(pt[0],pt[1]);
-            if (distance<6 && distance > 0.1){
+            float mDist = sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+                    + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y));
+            if (distance<6 && distance > 0.1 && mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold) ){
                 rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
                 pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
                 pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
@@ -175,7 +480,7 @@ void OdometryModule::updateCoordinatsLidar()
             }
         }
         timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot6
-/*
+#ifdef x64
         cv::Mat imToShow = colorImage.clone();
         for (int i=0;i<pts_3d.size();i++ ){
             char tttt[100];
@@ -191,12 +496,12 @@ void OdometryModule::updateCoordinatsLidar()
         }
         cv::imshow("test", imToShow);
         cv::waitKey(1);
-*/
+#endif
         std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
-        if (pts_3d.size()>3){
+        if (pts_3d.size()>7 && pts_2d.size()>7){
             cv::Mat r, t;
             cv::Mat dr, dt;
-            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false,  100, 4.0, 0.99);
             //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
             cv::Mat R;
             cv::Rodrigues(r, R);
@@ -220,6 +525,11 @@ void OdometryModule::updateCoordinatsLidar()
             coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
             std::cout << text<< std::endl;
         }
+        else {
+            framesDropped++;
+        }
+        framesCounter ++;
+        std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
     }
 
     prevKeypoints = keypoints;
