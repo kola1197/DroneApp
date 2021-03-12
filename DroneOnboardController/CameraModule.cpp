@@ -108,7 +108,7 @@ int CameraModule::startThread() {
             InputPixelAsFloat[0] = 320;
             InputPixelAsFloat[1] = 240;
             cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 30);
-            cfg.enable_stream(RS2_STREAM_COLOR, 960, 540, RS2_FORMAT_RGB8, 30);
+            cfg.enable_stream(RS2_STREAM_COLOR, 1280, 720, RS2_FORMAT_RGB8, 30);
 
             rs2::colorizer color_map;
             rs2::pipeline pipe;
@@ -128,7 +128,7 @@ int CameraModule::startThread() {
                 float distance = localDepthFrame.get_distance(320, 240);
 
                 rs2_deproject_pixel_to_point(ResultVector, &lDepthIntrinsics, InputPixelAsFloat, distance);
-                std::cout <<"DEPROJECTED POINT before: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
+                //std::cout <<"DEPROJECTED POINT before: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
                 //std::cout<<localDepthFrame.get_data()<<std::endl;
                 rs2::frame depth = localDepthFrame.apply_filter(color_map);
 

@@ -27,10 +27,13 @@ private:
     AsyncVar<bool> threadActive{true};
     void updateCoordinatsMono();
     void updateCoordinatsLidar();
+    void updateCoordinatsORBLidar();
     int frameNum = 0;
     cv::Mat E, R, t, mask;
     double prev_delta = 0;
     double prev_prev_delta = 0;
+    int framesDropped = 0;
+    int framesCounter = 0;
     cv::Mat R_f, t_f;
     bool firstFrame = true;
     cv::Mat prevImage;
@@ -50,6 +53,7 @@ private:
     void calculateTime(std::vector<std::chrono::microseconds> timeShot);
 
 
+    void adaptive_non_maximal_suppresion(std::vector<cv::KeyPoint> &keypoints, const int num);
 };
 
 
