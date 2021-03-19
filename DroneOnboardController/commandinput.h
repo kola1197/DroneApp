@@ -17,7 +17,7 @@ public:
     void Stop();
 private:
     //Command output = Command();
-    int currentSendMode = 0;   // 1 - joystick, 0 - failsafe, -1 - AI
+    int currentSendMode = 1;   // 1 - joystick, 0 - failsafe, -1 - AI
     JoyStickInput jsInput;
 };
 

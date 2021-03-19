@@ -45,6 +45,9 @@ void OdometryModule::startThread()
                 updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
+                if (px4Commander.connected.get()){
+                    px4Commander.sendCommnads(1700,1700,1700,1700);
+                }
             } else {
                 //std::cout<<"Have not got image on camModule"<<std::endl;
             }
@@ -107,8 +110,8 @@ void OdometryModule::updateCoordinatsORBLidar(){
     //siftDetector->compute(greyImage, keypoints, descriptors);
 
     timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot3
-    std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size " <<prevKeypoints.size() <<std::endl;
-    std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size " <<prevDescriptors.size() <<std::endl;
+    //std::cout << "Keypoints size: " << keypoints.size() << "  prevKeypoints size " <<prevKeypoints.size() <<std::endl;
+    //std::cout << "Descriptors size: " << descriptors.size() << "  prevSescriptors size " <<prevDescriptors.size() <<std::endl;
 
 
     if (prevKeypoints.size()>4 && keypoints.size()>4) {
@@ -239,7 +242,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
         cv::imshow("test", imToShow);
         cv::waitKey(1);
 #endif
-        std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
+        //std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
         if (pts_3d.size()>7 && pts_2d.size()>7){
             cv::Mat r, t;
             cv::Mat dr, dt;
@@ -265,13 +268,13 @@ void OdometryModule::updateCoordinatsORBLidar(){
             sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
                     t_f.at<double>(2));
             coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
-            std::cout << text<< std::endl;
+            //std::cout << text<< std::endl;
         }
         else {
             framesDropped++;
         }
         framesCounter ++;
-        std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
+        //std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
     }
 
     prevKeypoints = keypoints;
@@ -279,7 +282,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
     prevDepthFrame = depthFrame;
     std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     timeShot.push_back(endTime);
-    calculateTime(timeShot);
+    //calculateTime(timeShot);
 }
 
 void OdometryModule::adaptive_non_maximal_suppresion(std::vector<cv::KeyPoint> &keypoints, const int num)

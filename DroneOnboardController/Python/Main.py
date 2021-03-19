@@ -44,7 +44,7 @@ class Main:
                 print(sys.stdout, 'connection from', client_address)
                 # Receive the data in small chunks and retransmit it
                 while True:
-                    data = connection.recv(26)
+                    data = connection.recv(26).decode()
                     if data:
                         self.reactToData(data)
                         # print >> sys.stderr, 'sending data back to the client'

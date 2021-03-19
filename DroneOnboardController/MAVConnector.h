@@ -13,7 +13,6 @@ public:
     void test();
     int sock = 0;
     bool ConnectToServer();
-
     void SendData(char *data);
 };
 

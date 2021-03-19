@@ -317,6 +317,7 @@ void JoyStickInput::updateOutput()
     output.axis[5]=CH6Value;
     output.axis[6]=CH7Value;
     output.axis[7]=CH8Value;
+    std::cout<<"js values: "<<throttleValue<<" "<<rollValue<<" "<<pitchValue<<""<<yawValue<<std::endl;
     outputMutex.unlock();
 }
 
@@ -951,10 +952,10 @@ void JoyStickInput::usualExperimentalButtons(js_event event)
 void JoyStickInput::fullRtSticks(js_event event)
 {
     const int thr_const=1;
-    const int roll_const=10;
-    const int pit_const=10;
-    const int yaw_const=10;
-
+    const int roll_const=8;
+    const int pit_const=8;
+    const int yaw_const=8;
+    //std::cout<<"js sticks changed"<<std::endl;
     size_t axis;
     switch (countOfSticks)
     {
@@ -1021,9 +1022,9 @@ void JoyStickInput::fullRtSticks(js_event event)
 void JoyStickInput::extreamRtSticks(js_event event)
 {
     const int thr_const=1;
-    const int roll_const=10;
-    const int pit_const=10;
-    const int yaw_const=10;
+    const int roll_const=8;
+    const int pit_const=8;
+    const int yaw_const=8;
 
     size_t axis;
     switch (countOfSticks)
@@ -1200,7 +1201,7 @@ void JoyStickInput::countThrottle(int divider)
 {
     double d = 1300 + (lastRT - lastLT) / divider;
     throttleValue = (int)d;
-    if (throttleValue > 1800) {throttleValue = 1799;}
+    if (throttleValue > 2000) {throttleValue = 1999;}
     if (throttleValue < 900) {throttleValue = 901;}
 }
 
