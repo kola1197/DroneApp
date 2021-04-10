@@ -1,7 +1,7 @@
 from PXConnector import PXConnector
 import socket
 import sys
-
+import dronekit
 
 class Main:
     def __init__(self):
@@ -40,6 +40,8 @@ class Main:
             # Wait for a connection
             print('waiting for a connection')
             connection, client_address = self.sock.accept()
+            self.PX.vehicle.mode = dronekit.VehicleMode("GUIDED")
+            self.PX.vehicle.armed = True
             try:
                 print(sys.stdout, 'connection from', client_address)
                 # Receive the data in small chunks and retransmit it

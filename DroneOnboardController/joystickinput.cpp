@@ -500,11 +500,11 @@ void JoyStickInput::inertialButtons(js_event event)
         }
         if (event.number==six  && event.value )     //lt            //  all sticks to zero (if smth goes wrong)
         {
-            throttleValue = 1100;
-            rollValue = 1500;
-            pitchValue = 1500;
-            throttleValueFromJS = 1500;
-            yawValue = 1500;
+            throttleValue = 1700;
+            rollValue = 1700;
+            pitchValue = 1700;
+            throttleValueFromJS = 1700;
+            yawValue = 1700;
         }
         if (event.number==four && event.value )      //lb               //Throttle to mid
         {

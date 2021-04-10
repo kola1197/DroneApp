@@ -49,7 +49,7 @@ void PX4Comannder::startDronekit()
 
 bool PX4Comannder::connectToPX4()
 {
-    mavConnector.ConnectToServer();
+    return mavConnector.ConnectToServer();
 }
 
 void PX4Comannder::sendCommnads(int thr, int pitch, int roll, int yaw)

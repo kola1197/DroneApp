@@ -138,7 +138,7 @@ void OGLWidget::getCoordinatespoint(CvPoint3D32f point)
     if (!hasNewPoint){
         CvPoint3D32f lastpoint = points[points.size() - 1];
         CvPoint3D32f diff =  cvPoint3D32f(lastpoint.x - point.x,lastpoint.y - point.y,lastpoint.z - point.z);
-        hasNewPoint = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z > 1.0;
+        hasNewPoint = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z > 0.25;
     }
     if (hasNewPoint){
         points.push_back(point);

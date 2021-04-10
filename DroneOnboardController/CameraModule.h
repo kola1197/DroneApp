@@ -26,6 +26,7 @@ public:
     ~CameraModule();
     DroneImage leftImage;
     DroneImage rightImage;
+    DroneImage rightBoardImage;
     DroneImage leftPrevImage;
     DroneImage rightPrevImage;
 

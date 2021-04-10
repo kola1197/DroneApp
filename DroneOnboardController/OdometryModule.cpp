@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "sys/prctl.h"
 
 OdometryModule::OdometryModule(CameraModule* _camModule)
 {
@@ -39,6 +40,8 @@ void OdometryModule::startThread()
 {
     std::thread odometryThread([this]()
     {
+        QString s = "Odometry thread";
+        prctl(PR_SET_NAME,(char *)s.toStdString().c_str());
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
@@ -80,7 +83,6 @@ void OdometryModule::updateCoordinatsORBLidar(){
 
     int minHessian = 700;
 
-    int fast_threshold = 30;
     //bool nonmaxSuppression = true;
     std::vector<cv::KeyPoint> keypoints;
     //FAST(greyImage, keypoints, fast_threshold, nonmaxSuppression);
@@ -89,15 +91,16 @@ void OdometryModule::updateCoordinatsORBLidar(){
     //siftDetector->detect( greyImage, keypoints, descriptors );
     //cv::Ptr<cv::xfeatures2d::SIFT> siftDetector = cv::xfeatures2d::SIFT::create(minHessian );
 
-    auto detector_ = cv::ORB::create(3000);
-    auto descriptor_ = cv::ORB::create();
+    auto detector_ = cv::ORB::create(500);
+    //auto descriptor_ = cv::ORB::create();
     auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
+    int fast_threshold = 32;
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
     fastDetector->detect(greyImage, keypoints);
 
     //detector_->detect(greyImage, keypoints);
     adaptive_non_maximal_suppresion(keypoints, 500);
-    descriptor_->compute(greyImage, keypoints, descriptors);
+    detector_->compute(greyImage, keypoints, descriptors);
 
 
     //cv::Ptr<cv::xfeatures2d::SURF> siftDetector = cv::xfeatures2d::SURF::create(minHessian );
@@ -129,7 +132,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
 
 
         matcher_crosscheck_->match(prevDescriptors, descriptors, goodMatches);
-
+        //goodMatches = sorted(goodMatches, );
         // calculate the min/max distance
         /*auto min_max = minmax_element(prettyGoodMatches.begin(), prettyGoodMatches.end(), [](const auto &lhs, const auto &rhs) {
             return lhs.distance < rhs.distance;
@@ -183,9 +186,15 @@ void OdometryModule::updateCoordinatsORBLidar(){
         std::sort(sortedDiff.begin(),sortedDiff.end());
         float medianDistance = 1;
         if (sortedDiff.size()>1) {
-            medianDistance = sortedDiff[(int) sortedDiff.size() / 2];
+            medianDistance = sortedDiff[(int) sortedDiff.size() / 4];
         }
         timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot5
+        for (cv::DMatch m : prettyGoodMatches) {
+            sortedDiff.push_back(sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+                                      + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y)));
+        }
+
+
 
         /*for (size_t i = 0; i < prettyGoodMatches.size(); i++)
         {
@@ -213,7 +222,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
             float distance = prevDepthFrame.get_distance(pt[0],pt[1]);
             float mDist = sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
                                + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y));
-            if (distance<6 && distance > 0.1 /*&& mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold)*/ ){
+            if (distance<6 && distance > 0.1 && mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold) ){
                 rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
                 pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
                 pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
@@ -243,29 +252,49 @@ void OdometryModule::updateCoordinatsORBLidar(){
         if (pts_3d.size()>7 && pts_2d.size()>7){
             cv::Mat r, t;
             cv::Mat dr, dt;
-            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false,  100, 4.0, 0.99);
-            //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
-            cv::Mat R;
-            cv::Rodrigues(r, R);
-            if (t_f.empty() && R_f.empty()){
-                R_f = R.clone();
-                t_f = t.clone();
-            } else{
-                dt = t_f + (R_f * t);
-                dr = R * R_f;
-                if (std::abs(t_f.at<double>(0) - dt.at<double>(0)) < 2 && std::abs(t_f.at<double>(1) - dt.at<double>(1)) < 2
-                    && std::abs(t_f.at<double>(2) - dt.at<double>(2)) < 2){
-                    t_f = t_f + (R_f * t);
-                    R_f = R * R_f;
-                }
+            bool allOk = true;
+            try {
+
+
+                cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, true, 200, 1.0, 0.99);
             }
-            //std::cout << "R=" << std::endl << R << std::endl;
-            //std::cout << "t=" << std::endl << t << std::endl;
-            char text[100];
-            sprintf(text, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
-                    t_f.at<double>(2));
-            coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
-            std::cout << text<< std::endl;
+            catch (cv::Exception& e){
+                allOk = false;
+            }
+            if (allOk){
+                //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+
+                cv::Mat R;
+                cv::Rodrigues(r, R);
+                if (t_f.empty() && R_f.empty()){
+                    R_f = R.clone();
+                    t_f = t.clone();
+                } else{
+                    dt = t_f + (R_f * t);
+                    dr = R * R_f;
+                    if (std::abs(t_f.at<double>(0) - dt.at<double>(0)) < 2 && std::abs(t_f.at<double>(1) - dt.at<double>(1)) < 2
+                        && std::abs(t_f.at<double>(2) - dt.at<double>(2)) < 2){
+                        t_f = t_f + (R_f * t);
+                        R_f = R * R_f;
+                    }
+                }
+                //std::cout << "R=" << std::endl << R << std::endl;
+                //std::cout << "t=" << std::endl << t << std::endl;
+                prevKeypoints = keypoints;
+                prevDescriptors = descriptors;
+                prevDepthFrame = depthFrame;
+                char coordinatesText[100];
+                char anglesText[100];
+                sprintf(coordinatesText, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
+                        t_f.at<double>(2));
+                sprintf(anglesText, "Angles: x = %02fm y = %02fm z = %02fm", R_f.at<double>(0), R_f.at<double>(1),
+                        R_f.at<double>(2));
+
+                std::cout << coordinatesText<< std::endl;
+                std::cout << anglesText<< std::endl;
+
+                coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+            }
         }
         else {
             framesDropped++;
@@ -274,9 +303,11 @@ void OdometryModule::updateCoordinatsORBLidar(){
         std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
     }
 
-    prevKeypoints = keypoints;
-    prevDescriptors = descriptors;
-    prevDepthFrame = depthFrame;
+    if (prevKeypoints.size()==0){
+        prevKeypoints = keypoints;
+        prevDescriptors = descriptors;
+        prevDepthFrame = depthFrame;
+    }
     std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
     timeShot.push_back(endTime);
     calculateTime(timeShot);

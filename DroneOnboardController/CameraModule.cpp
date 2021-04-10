@@ -107,8 +107,8 @@ int CameraModule::startThread() {
             float InputPixelAsFloat[2];
             InputPixelAsFloat[0] = 320;
             InputPixelAsFloat[1] = 240;
-            cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16 , 30);
-            cfg.enable_stream(RS2_STREAM_COLOR, 1280, 720, RS2_FORMAT_RGB8, 30);
+            cfg.enable_stream(RS2_STREAM_DEPTH, 848, 480, RS2_FORMAT_Z16 , 60);
+            cfg.enable_stream(RS2_STREAM_COLOR, 960, 540, RS2_FORMAT_RGB8, 60);
 
             rs2::colorizer color_map;
             rs2::pipeline pipe;
@@ -123,6 +123,7 @@ int CameraModule::startThread() {
                 rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
                 rs2::frame color = data.get_color_frame();
                 rs2::depth_frame localDepthFrame = data.get_depth_frame();
+
                 const int w = color.as<rs2::video_frame>().get_width();
                 const int h = color.as<rs2::video_frame>().get_height();
                 float distance = localDepthFrame.get_distance(320, 240);
@@ -159,9 +160,18 @@ int CameraModule::startThread() {
                 //if (counter == 0){
                 //    prevDepthFrame = depthFrame;
                 //}
+
+                cv::VideoCapture cap(8); // open the video camera no. 0
+                cap.set(cv::CAP_PROP_FRAME_WIDTH,1240);
+                cap.set(cv::CAP_PROP_FRAME_HEIGHT,720);
+                cv::Mat frame;
+                bool bSuccess = cap.read(frame);
+
+                rightBoardImage.setImage(frame.size(), frame.data);
+
                 depthImageMutex.unlock();
                 if (imageCaptureMode.get()){
-                    char buffer[PATH_MAX];
+                    /*char buffer[PATH_MAX];
                     getcwd(buffer, sizeof(buffer));
                     std::string protoPath("./" + dirToSave+"/0/"+std::to_string(counter)+".jpg");
                     std::string path("");
@@ -172,7 +182,8 @@ int CameraModule::startThread() {
                     }
                     ///home/nickolay/Code/DroneApp/cmake-build-debug/DroneOnboardController/SatFeb2718:57:352021/0
                     std::cout<<path<<std::endl;
-                    cv::imwrite(path,colorImageA);
+                    cv::imwrite(path,colorImageA);*/
+                    saveImages();
                     //cv::imwrite(std::string(buffer) + dirToSave+"/0/"+std::to_string(counter)+".bmp",colorImageA);
                 }
                 gotImage.set(true);
@@ -245,14 +256,19 @@ void CameraModule::setImageCaptureMode(bool mode) {
             saveCounter = 0;
             std::string path0 = dirToSave + "/0";
             std::string path1 = dirToSave + "/1";
+            std::string path2 = dirToSave + "/2";
             path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());
             path1.erase(std::remove(path1.begin(), path1.end(), ' '), path1.end());
+            path2.erase(std::remove(path2.begin(), path2.end(), ' '), path2.end());
             path0.erase(std::remove(path0.begin(), path0.end(), '\n'), path0.end());
             path1.erase(std::remove(path1.begin(), path1.end(), '\n'), path1.end());
+            path2.erase(std::remove(path2.begin(), path2.end(), '\n'), path2.end());
             std::string com0 = "mkdir -p " + path0;
             std::string com1 = "mkdir -p " + path1;
+            std::string com2 = "mkdir -p " + path2;
             system(com0.data());
             system(com1.data());
+            system(com2.data());
         }
         imageCaptureMode.set(mode);
     } else {
@@ -264,15 +280,20 @@ void CameraModule::saveImages() {
 
     std::string path0 = dirToSave + "/0";
     std::string path1 = dirToSave + "/1";
+    std::string path2 = dirToSave + "/2";
     path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());
     path1.erase(std::remove(path1.begin(), path1.end(), ' '), path1.end());
+    path2.erase(std::remove(path2.begin(), path2.end(), ' '), path2.end());
     path0.erase(std::remove(path0.begin(), path0.end(), '\n'), path0.end());
     path1.erase(std::remove(path1.begin(), path1.end(), '\n'), path1.end());
+    path2.erase(std::remove(path2.begin(), path2.end(), '\n'), path2.end());
     path0 += "/" + std::to_string(saveCounter) + ".jpg";
     path1 += "/" + std::to_string(saveCounter) + ".jpg";
+    path2 += "/" + std::to_string(saveCounter) + ".jpg";
     cv::imwrite(path0, *leftImage.getImage());
     cv::imwrite(path1, *rightImage.getImage());
-    std::cout << path0 << std::endl;
+    cv::imwrite(path2, *rightBoardImage.getImage());
+    //std::cout << path0 << std::endl;
     saveCounter++;
 }
 
