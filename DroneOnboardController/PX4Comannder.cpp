@@ -35,7 +35,7 @@ void PX4Comannder::startDronekit()
         std::cout << "turning on drone kit" << std::endl;
         char *argv[2];
         argv[0] = "python3";
-        argv[1] = "/home/nickolay/Code/DroneApp/DroneOnboardController/Python/Main.py";
+        argv[1] = "../Python/Main.py";//"/home/nickolay/Code/DroneApp/DroneOnboardController/Python/Main.py";
         argv[2] = NULL;
 
         execvp("python3", argv);        /* The execvp function returns only if an error occurs.  */
@@ -49,7 +49,9 @@ void PX4Comannder::startDronekit()
 
 bool PX4Comannder::connectToPX4()
 {
-    return mavConnector.ConnectToServer();
+    bool result = mavConnector.ConnectToServer();
+    connected.set(result);
+    return result;
 }
 
 void PX4Comannder::sendCommnads(int thr, int pitch, int roll, int yaw)

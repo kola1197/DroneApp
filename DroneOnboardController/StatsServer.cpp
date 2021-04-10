@@ -466,7 +466,7 @@ void StatsServer::UpConnectionToPX4(){
     std::thread thr([this]() {
         odometryModule->px4Commander.startDronekit();
         std::cout<<"dronekit started"<<std::endl;
-        int connectionCounter = 30;
+        int connectionCounter = 40;
         bool connected = false;
         while (connectionCounter>1 && !connected){
             connectionCounter--;

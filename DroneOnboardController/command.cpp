@@ -34,7 +34,17 @@ std::string Command::getDataToSend()
     for (int i = 0; i < CHANNEL_CONTROL_LAST; i++)
     {
         result+='_';
-        result+=std::to_string(axis[i]);
+        if (i==0){
+        result+=std::to_string(axis[i]-50);
+        }
+        else{
+            if (i==2){
+        result+=std::to_string((int)(axis[i]*1.1));
+        }
+        else{
+            result+=std::to_string(axis[i]);
+        }
+        }
     }
 
     return result;

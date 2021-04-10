@@ -1,3 +1,4 @@
+
 from dronekit import *
 # from Logger import Logger
 import serial
@@ -15,7 +16,7 @@ class PXConnector:
     def __init__(self):
         """ constructor """
         # self.Logger = Logger
-        self.path = '/dev/ttyACM0' #'/dev/ttyS0'
+        self.path = '/dev/ttyS0' #'/dev/ttyS0'
         self.vehicleExists = 0
         # self.ReactToMsg = _ReactToMsg
 
@@ -24,13 +25,15 @@ class PXConnector:
         # self.Logger.Write
         print ('Connecting to PX4 on %s' % self.path)
         try:
-            self.vehicle = connect(self.path, wait_ready=False, baud=57600 )
+            self.vehicle = connect(self.path, wait_ready=False, baud=115200 )
             self.vehicle.wait_ready(True, raise_exeption=False)
             self.vehicleExists = 1
             # self.Logger.Write
             self.connected = True
             print ('PX4 connected')
             self.vehicle.armed = True
+            self.vehicle.mode = VehicleMode("MANUAL")
+
             # self.Logger.Write
             print ("startListening")
             # fn = self.react

@@ -52,7 +52,7 @@ private:
     int midThrottle=1350;
     //void startJoyStickMode();
     int countOfSticks=0;
-    int currentMode=4;
+    int currentMode=5;
     bool autopilotMode=false;
     bool rtPressed=false;
     bool ltPressed=false;
