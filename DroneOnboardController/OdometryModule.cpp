@@ -307,7 +307,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
                     t_f.at<double>(2));
             coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
             //std::cout << text<< std::endl;
->>>>>>> 191d39d2a378637a27e89ddb52e623893df1d5cd*/
+>>>>>>> 191d39d2a378637a27e89ddb52e623893df1d5cd*/ 
         }
         else {
             framesDropped++;

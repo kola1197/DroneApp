@@ -28,6 +28,7 @@
 //#endif
 
 #include <unistd.h>
+#include <fstream>
 
 inline bool exists (const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
@@ -36,7 +37,7 @@ inline bool exists (const std::string& name) {
 int CameraModule::startThread() {
     int result = 0;
     std::cout << "starting thread" << std::endl;
-    if (captureMode.get() == CaptureMode::TEST_DATASET) {
+    /*if (captureMode.get() == CaptureMode::TEST_DATASET) {
         std::thread thr([this]() {
             cv::Mat frame;
             cv::Mat out;
@@ -55,12 +56,7 @@ int CameraModule::startThread() {
                     s.append(std::to_string(counter).c_str());
                     s.append(".png");
                     //std::cout << "left path: " << s << std::endl;
-                    /*if (exists(leftPart))
-                    {
-                        std::cout<<"exists"<<std::endl;
-                    } else{
-                        std::cout<<"NOT EXISTS"<<std::endl;
-                    }*/
+
                     out = cv::imread(s);
                     if (!out.data) {
                         std::cout << "Image read error on test 2!!!" << std::endl;
@@ -92,7 +88,7 @@ int CameraModule::startThread() {
             std::cout << "Thread done" << std::endl;
         });
         thr.detach();
-    }
+    }*/
     if (captureMode.get() == CaptureMode::REALSENSE) {                                                                   //TODO: add check of video0/video2 exist
         std::thread thr([this]() {
             int counter = 0;
@@ -161,14 +157,17 @@ int CameraModule::startThread() {
                 //    prevDepthFrame = depthFrame;
                 //}
 
+
                 cv::VideoCapture cap(8); // open the video camera no. 0
-                cap.set(cv::CAP_PROP_FRAME_WIDTH,1240);
-                cap.set(cv::CAP_PROP_FRAME_HEIGHT,720);
-                cv::Mat frame;
-                bool bSuccess = cap.read(frame);
+                if (cap.isOpened()) {
+                    #define RIGHT_CAMERA_EXISTS
+                    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1240);
+                    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+                    cv::Mat frame;
+                    bool bSuccess = cap.read(frame);
 
-                rightBoardImage.setImage(frame.size(), frame.data);
-
+                    rightBoardImage.setImage(frame.size(), frame.data);
+                }
                 depthImageMutex.unlock();
                 if (imageCaptureMode.get()){
                     /*char buffer[PATH_MAX];
@@ -194,6 +193,69 @@ int CameraModule::startThread() {
             }
         });
         thr.detach();
+    }
+    if (captureMode.get() == CaptureMode::TEST_DATASET) {
+        int counter = 0;
+        std::cout<<"DATASET"<<std::endl;
+        std::string path = "/home/nickolay/Odometry Dataset/00";
+        std::string imageFolderPath = path + "/0/";
+        std::string depthFolderPath = path + "/3/";
+        std::string intristicFolderPath = path + "/4/";
+        cv::Mat out;
+
+        while ((!threadStop.get()) && counter < 1600) {
+            std::string imagePath = imageFolderPath + std::to_string(counter) + ".jpg";
+            std::string depthPath = depthFolderPath + std::to_string(counter) +  ".dpt";
+            std::string intristicPath = intristicFolderPath + std::to_string(counter) + ".intr";
+
+            out = cv::imread(imagePath);
+            if (!out.data) {
+                std::cout << "Image read error in dataset reader " + imagePath << std::endl;
+            }
+
+            leftPrevImage.setImage(leftImage.getImage()->size(), leftImage.getImage()->data);
+            leftImage.setImage(out.size(), out.data);
+            std::vector<std::vector<double>> depthArray;
+            std::ifstream in(depthPath); // окрываем файл для чтения
+            double depth [848][480];
+            if (in.is_open())
+            {
+                for (int i = 0; i < 848; i++)
+                {
+                    for (int j = 0; j < 480; j++)
+                    {
+                        double d = -1;
+                        in >> d;
+                        depth[i][j] = d;
+                        //depthArray[i].push_back(d);
+                    }
+                }
+                for (auto & i : depth)
+                {
+                    for (double j : i)
+                    {
+                        std::cout<<j<<" ";
+                        //std::cout<<depthArray[i][j]<<" ";
+                    }
+                    std::cout<<"\n";
+                }
+            }
+            in.close();     // закрываем файл
+
+            std::ifstream fin;
+            fin.open(intristicPath,std::ios_base::in);
+            rs2_intrinsics r = DepthIntrinsics.get();
+            fin.read(reinterpret_cast<char*>(&r), sizeof(r));
+
+            //fin.read(&r, sizeof (rs2_intrinsics));
+            fin.close();
+
+
+            usleep(33000);
+            frameNum.set(counter);
+            imageForOdometryModuleUpdated.set(true);
+            counter++;
+        }
     }
     return result;                                  // 0 - ok, 1 - this testMode can not be set
 }
@@ -257,18 +319,34 @@ void CameraModule::setImageCaptureMode(bool mode) {
             std::string path0 = dirToSave + "/0";
             std::string path1 = dirToSave + "/1";
             std::string path2 = dirToSave + "/2";
+            std::string path3 = dirToSave + "/3";
+            std::string path4 = dirToSave + "/4";
+
+
             path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());
             path1.erase(std::remove(path1.begin(), path1.end(), ' '), path1.end());
             path2.erase(std::remove(path2.begin(), path2.end(), ' '), path2.end());
+            path3.erase(std::remove(path3.begin(), path3.end(), ' '), path3.end());
+            path4.erase(std::remove(path4.begin(), path4.end(), ' '), path4.end());
+
+
             path0.erase(std::remove(path0.begin(), path0.end(), '\n'), path0.end());
             path1.erase(std::remove(path1.begin(), path1.end(), '\n'), path1.end());
             path2.erase(std::remove(path2.begin(), path2.end(), '\n'), path2.end());
+            path3.erase(std::remove(path3.begin(), path3.end(), '\n'), path3.end());
+            path4.erase(std::remove(path4.begin(), path4.end(), '\n'), path4.end());
+
             std::string com0 = "mkdir -p " + path0;
             std::string com1 = "mkdir -p " + path1;
             std::string com2 = "mkdir -p " + path2;
+            std::string com3 = "mkdir -p " + path3;
+            std::string com4 = "mkdir -p " + path4;
+
             system(com0.data());
             system(com1.data());
             system(com2.data());
+            system(com3.data());
+            system(com4.data());
         }
         imageCaptureMode.set(mode);
     } else {
@@ -281,20 +359,60 @@ void CameraModule::saveImages() {
     std::string path0 = dirToSave + "/0";
     std::string path1 = dirToSave + "/1";
     std::string path2 = dirToSave + "/2";
+    std::string path3 = dirToSave + "/3";
+    std::string path4 = dirToSave + "/4";
+
+
     path0.erase(std::remove(path0.begin(), path0.end(), ' '), path0.end());
     path1.erase(std::remove(path1.begin(), path1.end(), ' '), path1.end());
     path2.erase(std::remove(path2.begin(), path2.end(), ' '), path2.end());
+    path3.erase(std::remove(path3.begin(), path3.end(), ' '), path3.end());
+    path4.erase(std::remove(path4.begin(), path4.end(), ' '), path4.end());
+
     path0.erase(std::remove(path0.begin(), path0.end(), '\n'), path0.end());
     path1.erase(std::remove(path1.begin(), path1.end(), '\n'), path1.end());
     path2.erase(std::remove(path2.begin(), path2.end(), '\n'), path2.end());
+    path3.erase(std::remove(path3.begin(), path3.end(), '\n'), path3.end());
+    path4.erase(std::remove(path4.begin(), path4.end(), '\n'), path4.end());
+
     path0 += "/" + std::to_string(saveCounter) + ".jpg";
     path1 += "/" + std::to_string(saveCounter) + ".jpg";
     path2 += "/" + std::to_string(saveCounter) + ".jpg";
+    path3 += "/" + std::to_string(saveCounter) + ".dpt";
+    path4 += "/" + std::to_string(saveCounter) + ".intr";
+
     cv::imwrite(path0, *leftImage.getImage());
     cv::imwrite(path1, *rightImage.getImage());
+#ifdef RIGHT_CAMERA_EXISTS
     cv::imwrite(path2, *rightBoardImage.getImage());
+#endif
+    saveDepth(path3);
+    if (saveCounter==0){
+        saveIntristics(path4);
+    }
     //std::cout << path0 << std::endl;
     saveCounter++;
+}
+
+void CameraModule::saveIntristics(std::string path){
+    std::ofstream fout;
+    fout.open(path,std::ios_base::out);
+    rs2_intrinsics r = DepthIntrinsics.get();
+    fout.write(reinterpret_cast<char*>(&r), sizeof(r));
+}
+
+void CameraModule::saveDepth(const std::string& path){
+    std::ofstream fout;
+    fout.open(path,std::ios_base::out);
+    double depth [depthFrame.get_width()][depthFrame.get_height()];
+    for (int i=0;i<depthFrame.get_width();i++){
+        for (int j=0;j<depthFrame.get_height();j++){
+            depth[i][j]  = depthFrame.get_distance(i,j);
+            fout<<" "<<depth[i][j]<<" ";
+        }
+        fout<<"\n";
+    }
+    fout.close();
 }
 
 void CameraModule::getDirectoryToSave() {

@@ -63,13 +63,17 @@ private:
 //    int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
 //#else
     //int testMode = 2;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
-    AsyncVar<CaptureMode> captureMode {CaptureMode::REALSENSE};
+    AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
 //#endif
     void getDirectoryToSave();
     std::string dirToSave = "";
     int saveCounter=0;
     MutexBool imageCaptureMode{false};
     void saveImages();
+
+    void saveDepth(const std::string& path);
+
+    void saveIntristics(std::string path);
 };
 
 
