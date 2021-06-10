@@ -39,11 +39,13 @@ public:
     AsyncVar<bool> gotImage{false};
     AsyncVar<bool> imageForOdometryModuleUpdated{false};
     AsyncVar<int> frameNum{0};
+    float getDist(int x,int y);
     //AsyncVar<rs2::depth_frame>  depthFrame{nullptr};
     std::mutex depthImageMutex;
     rs2::depth_frame depthFrame = rs2::depth_frame(nullptr);
     //rs2::depth_frame prevDepthFrame = rs2::depth_frame(nullptr);
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
+    AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
 
 //#ifdef __arm__                                                           //dji modules installed only on raspberry pi
 //    static int my_callback(int data_type, int data_len, char *content);
@@ -63,14 +65,14 @@ private:
 //    int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
 //#else
     //int testMode = 2;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system, 3 both images from video0
-    AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
 //#endif
     void getDirectoryToSave();
     std::string dirToSave = "";
     int saveCounter=0;
     MutexBool imageCaptureMode{false};
     void saveImages();
-
+    double depth [848][480];
+    std::mutex depthMutex;
     void saveDepth(const std::string& path);
 
     void saveIntristics(std::string path);

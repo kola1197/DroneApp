@@ -105,6 +105,7 @@ int CameraModule::startThread() {
             InputPixelAsFloat[1] = 240;
             cfg.enable_stream(RS2_STREAM_DEPTH, 848, 480, RS2_FORMAT_Z16 , 60);
             cfg.enable_stream(RS2_STREAM_COLOR, 960, 540, RS2_FORMAT_RGB8, 60);
+            //cfg.enable_stream(RS2_STREAM_COLOR, 848, 480, RS2_FORMAT_RGB8, 60);
 
             rs2::colorizer color_map;
             rs2::pipeline pipe;
@@ -186,18 +187,19 @@ int CameraModule::startThread() {
                     //cv::imwrite(std::string(buffer) + dirToSave+"/0/"+std::to_string(counter)+".bmp",colorImageA);
                 }
                 gotImage.set(true);
-                usleep(33000);
                 frameNum.set(counter);
                 imageForOdometryModuleUpdated.set(true);
+                usleep(33000);
                 counter++;
             }
         });
         thr.detach();
     }
     if (captureMode.get() == CaptureMode::TEST_DATASET) {
+        std::thread thr([this]() {
         int counter = 0;
         std::cout<<"DATASET"<<std::endl;
-        std::string path = "/home/nickolay/Odometry Dataset/00";
+        std::string path = "/home/nickolay/My_Dataset/02";
         std::string imageFolderPath = path + "/0/";
         std::string depthFolderPath = path + "/3/";
         std::string intristicFolderPath = path + "/4/";
@@ -217,7 +219,7 @@ int CameraModule::startThread() {
             leftImage.setImage(out.size(), out.data);
             std::vector<std::vector<double>> depthArray;
             std::ifstream in(depthPath); // окрываем файл для чтения
-            double depth [848][480];
+            double depth1 [848][480];
             if (in.is_open())
             {
                 for (int i = 0; i < 848; i++)
@@ -226,11 +228,11 @@ int CameraModule::startThread() {
                     {
                         double d = -1;
                         in >> d;
-                        depth[i][j] = d;
+                        depth1[i][j] = d;
                         //depthArray[i].push_back(d);
                     }
                 }
-                for (auto & i : depth)
+                /*for (auto & i : depth1)
                 {
                     for (double j : i)
                     {
@@ -238,7 +240,7 @@ int CameraModule::startThread() {
                         //std::cout<<depthArray[i][j]<<" ";
                     }
                     std::cout<<"\n";
-                }
+                }*/
             }
             in.close();     // закрываем файл
 
@@ -246,16 +248,25 @@ int CameraModule::startThread() {
             fin.open(intristicPath,std::ios_base::in);
             rs2_intrinsics r = DepthIntrinsics.get();
             fin.read(reinterpret_cast<char*>(&r), sizeof(r));
-
+            DepthIntrinsics.set(r);
             //fin.read(&r, sizeof (rs2_intrinsics));
             fin.close();
-
-
-            usleep(33000);
+            depthMutex.lock();
+            for (int i=0;i<848;i++) {
+                for (int j=0;j<480;j++) {
+                    depth[i][j] = depth1[i][j];
+                }
+            }
+            depthMutex.unlock();
+            gotImage.set(true);
             frameNum.set(counter);
             imageForOdometryModuleUpdated.set(true);
             counter++;
+            usleep(33000);
+
         }
+        });
+        thr.detach();
     }
     return result;                                  // 0 - ok, 1 - this testMode can not be set
 }
@@ -309,6 +320,13 @@ CameraModule::CameraModule() {
 
 CameraModule::~CameraModule() {
     stopThread();
+}
+
+float CameraModule::getDist(int x, int y) {
+    depthMutex.lock();
+    float result = (float) depth[x][y];
+    depthMutex.unlock();
+    return result;
 }
 
 void CameraModule::setImageCaptureMode(bool mode) {
@@ -405,9 +423,11 @@ void CameraModule::saveDepth(const std::string& path){
     std::ofstream fout;
     fout.open(path,std::ios_base::out);
     double depth [depthFrame.get_width()][depthFrame.get_height()];
+    double d = 0;
     for (int i=0;i<depthFrame.get_width();i++){
         for (int j=0;j<depthFrame.get_height();j++){
-            depth[i][j]  = depthFrame.get_distance(i,j);
+            d = depthFrame.get_distance(i,j);
+            depth[i][j] = d;
             fout<<" "<<depth[i][j]<<" ";
         }
         fout<<"\n";

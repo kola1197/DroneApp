@@ -45,11 +45,15 @@ void OdometryModule::startThread()
         while (threadActive.get())
         {
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
+                //std::cout<<"Got image on camModule"<<std::endl;
                 updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
                 if (px4Commander.connected.get()){
                     px4Commander.sendCommnads(1700,1700,1700,1700);
+                }
+                else{
+
                 }
             } else {
                 //std::cout<<"Have not got image on camModule"<<std::endl;
@@ -97,7 +101,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
     auto detector_ = cv::ORB::create(500);
     //auto descriptor_ = cv::ORB::create();
     auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
-    int fast_threshold = 32;
+    int fast_threshold = 22;
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
     fastDetector->detect(greyImage, keypoints);
 
@@ -209,6 +213,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
         std::vector<cv::Point2f> debugLines;
         float distanceTreshold = 3.5f;
         //std::cout << "A total of found " << knn_matches.size() << " Group Match Point" << std::endl;
+        std::cout<<"prettyGoodMatches size: "<<prettyGoodMatches.size()<<std::endl;
         for (cv::DMatch m : prettyGoodMatches)
         {
             /*ushort d = d1.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)];
@@ -220,12 +225,22 @@ void OdometryModule::updateCoordinatsORBLidar(){
             float InputPixelAsFloat[2] {prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y};
             //int w = depthFrame.get_width();
             int pt [2];
-            pt[0] = (int) (InputPixelAsFloat[0] * prevDepthFrame.get_width()/greyImage.cols);
-            pt[1] = (int) (InputPixelAsFloat[1] * prevDepthFrame.get_height()/greyImage.rows);
-            float distance = prevDepthFrame.get_distance(pt[0],pt[1]);
+
+            float distance = 0;
+            if (camModule->captureMode.get() == REALSENSE) {
+                pt[0] = (int) (InputPixelAsFloat[0] * prevDepthFrame.get_width()/greyImage.cols);
+                pt[1] = (int) (InputPixelAsFloat[1] * prevDepthFrame.get_height()/greyImage.rows);
+                distance = prevDepthFrame.get_distance(pt[0], pt[1]);
+            }
+            else{
+                pt[0] = (int) (InputPixelAsFloat[0] * 848/greyImage.cols);;
+                pt[1] = (int) (InputPixelAsFloat[1] * 480/greyImage.rows);
+                distance = camModule->getDist(pt[0],pt[1]);
+                //std::cout <<distance<<std::endl;
+            }
             float mDist = sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
                                + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y));
-            if (distance<6 && distance > 0.1 && mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold) ){
+            if (/*distance<6 && */ distance > 0.1 && mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold) ){
                 rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
                 pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
                 pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
@@ -252,7 +267,8 @@ void OdometryModule::updateCoordinatsORBLidar(){
         cv::waitKey(1);
 #endif
         //std::cout << "3d-2d pairs: " << pts_3d.size() << std::endl;
-        if (pts_3d.size()>7 && pts_2d.size()>7){
+        if (pts_3d.size()>7 && pts_2d.size()>7)
+        {
             cv::Mat r, t;
             cv::Mat dr, dt;
             bool allOk = true;
@@ -313,7 +329,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
             framesDropped++;
         }
         framesCounter ++;
-        //std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
+        std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
     }
 
     if (prevKeypoints.size()==0){
