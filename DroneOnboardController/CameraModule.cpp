@@ -199,7 +199,7 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
         int counter = 0;
         std::cout<<"DATASET"<<std::endl;
-        std::string path = "/home/nickolay/My_Dataset/02";
+        std::string path = "/home/nickolay/My_Dataset/04";
         std::string imageFolderPath = path + "/0/";
         std::string depthFolderPath = path + "/3/";
         std::string intristicFolderPath = path + "/4/";
@@ -212,58 +212,57 @@ int CameraModule::startThread() {
 
             out = cv::imread(imagePath);
             if (!out.data) {
-                std::cout << "Image read error in dataset reader " + imagePath << std::endl;
+                //std::cout << "Image read error in dataset reader " + imagePath << std::endl;
+                endOfImageStream.set(true);
             }
+            else {
 
-            leftPrevImage.setImage(leftImage.getImage()->size(), leftImage.getImage()->data);
-            leftImage.setImage(out.size(), out.data);
-            std::vector<std::vector<double>> depthArray;
-            std::ifstream in(depthPath); // окрываем файл для чтения
-            double depth1 [848][480];
-            if (in.is_open())
-            {
-                for (int i = 0; i < 848; i++)
-                {
-                    for (int j = 0; j < 480; j++)
+                leftPrevImage.setImage(leftImage.getImage()->size(), leftImage.getImage()->data);
+                leftImage.setImage(out.size(), out.data);
+                std::vector<std::vector<double>> depthArray;
+                std::ifstream in(depthPath); // окрываем файл для чтения
+                double depth1[848][480];
+                if (in.is_open()) {
+                    for (int i = 0; i < 848; i++) {
+                        for (int j = 0; j < 480; j++) {
+                            double d = -1;
+                            in >> d;
+                            depth1[i][j] = d;
+                            //depthArray[i].push_back(d);
+                        }
+                    }
+                    /*for (auto & i : depth1)
                     {
-                        double d = -1;
-                        in >> d;
-                        depth1[i][j] = d;
-                        //depthArray[i].push_back(d);
+                        for (double j : i)
+                        {
+                            std::cout<<j<<" ";
+                            //std::cout<<depthArray[i][j]<<" ";
+                        }
+                        std::cout<<"\n";
+                    }*/
+                }
+                in.close();     // закрываем файл
+
+                std::ifstream fin;
+                fin.open(intristicPath, std::ios_base::in);
+                rs2_intrinsics r = DepthIntrinsics.get();
+                fin.read(reinterpret_cast<char *>(&r), sizeof(r));
+                DepthIntrinsics.set(r);
+                //fin.read(&r, sizeof (rs2_intrinsics));
+                fin.close();
+                depthMutex.lock();
+                for (int i = 0; i < 848; i++) {
+                    for (int j = 0; j < 480; j++) {
+                        depth[i][j] = depth1[i][j];
                     }
                 }
-                /*for (auto & i : depth1)
-                {
-                    for (double j : i)
-                    {
-                        std::cout<<j<<" ";
-                        //std::cout<<depthArray[i][j]<<" ";
-                    }
-                    std::cout<<"\n";
-                }*/
+                depthMutex.unlock();
+                gotImage.set(true);
+                frameNum.set(counter);
+                imageForOdometryModuleUpdated.set(true);
+                counter++;
+                usleep(33000);
             }
-            in.close();     // закрываем файл
-
-            std::ifstream fin;
-            fin.open(intristicPath,std::ios_base::in);
-            rs2_intrinsics r = DepthIntrinsics.get();
-            fin.read(reinterpret_cast<char*>(&r), sizeof(r));
-            DepthIntrinsics.set(r);
-            //fin.read(&r, sizeof (rs2_intrinsics));
-            fin.close();
-            depthMutex.lock();
-            for (int i=0;i<848;i++) {
-                for (int j=0;j<480;j++) {
-                    depth[i][j] = depth1[i][j];
-                }
-            }
-            depthMutex.unlock();
-            gotImage.set(true);
-            frameNum.set(counter);
-            imageForOdometryModuleUpdated.set(true);
-            counter++;
-            usleep(33000);
-
         }
         });
         thr.detach();

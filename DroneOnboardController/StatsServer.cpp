@@ -17,6 +17,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <fcntl.h>
+#include <fstream>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -135,6 +136,44 @@ void StatsServer::startServer(){
 //        usleep(40000);
 //    }
 
+}
+
+std::vector<double> StatsServer::odometryTest(int fast_threshold, bool nonmaxSupression, std::ofstream* fout) {
+    std::vector<double> result;
+    int res = camModule.startThread();
+    if (res == 0) {
+        odometryModule = new OdometryModule(&camModule);
+        odometryModule->fast_threshold = fast_threshold;
+        odometryModule->nonmaxSupression = nonmaxSupression;
+        odometryModule->startThread();
+        UpdateSettingsForGroundStation();
+        while (!camModule.endOfImageStream.get()) {
+            //updateDataForGroundStation();
+            usleep(33000);
+        }
+    }
+    else {
+        sendAllert("Wrong image capture mode");
+        while (!stopThread()) {
+            sleep(1);
+        }
+    }
+
+    double diff = sqrt(odometryModule->coordinates.get().x*odometryModule->coordinates.get().x +
+                               odometryModule->coordinates.get().y*odometryModule->coordinates.get().y +
+                               odometryModule->coordinates.get().z*odometryModule->coordinates.get().z);
+    std::cout<<" fast_threshold: "<<fast_threshold<<" nonmaxSupression: " <<nonmaxSupression<<std::endl;
+    std::cout<<"Distance - " << diff<<" Coordinates x: "<<odometryModule->coordinates.get().x<<" y: "<<odometryModule->coordinates.get().y<<" z: "<<odometryModule->coordinates.get().z<<std::endl;
+    //*fout << " fast_threshold: "<<fast_threshold<<" nonmaxSupression: " <<nonmaxSupression<<"\n";
+    //*fout << "Distance - " << sqrt<<" Coordinates x: "<<odometryModule->coordinates.get().x<<" y: "<<odometryModule->coordinates.get().y<<" z: "<<odometryModule->coordinates.get().z<<"\n";
+    //*fout << "\n";
+    result.push_back(fast_threshold);
+    result.push_back(nonmaxSupression);
+    result.push_back(diff);
+    result.push_back(odometryModule->coordinates.get().x);
+    result.push_back(odometryModule->coordinates.get().y);
+    result.push_back(odometryModule->coordinates.get().z);
+    return result;
 }
 
 void StatsServer::updateDataForGroundStation()

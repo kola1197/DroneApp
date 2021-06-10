@@ -28,7 +28,7 @@ class StatsServer {
 public :
     StatsServer();
     ~StatsServer();
-
+    std::vector<double> odometryTest(int fast_threshold, bool nonmaxSupression, std::ofstream* fout);
     void startServer();
     AsyncVar<bool> serverStop{false};
     void readVoid();
@@ -99,6 +99,7 @@ private:
     void UpdateSettingsForGroundStation();
 
     void UpConnectionToPX4();
+
 };
 
 

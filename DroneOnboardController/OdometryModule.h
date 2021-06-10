@@ -21,6 +21,9 @@ public:
     AsyncVar<CvPoint3D32f> targetPoint{CvPoint3D32f{1,1,0}};
     void setCurrentPointAsZero();
     PX4Comannder px4Commander;
+
+    int fast_threshold = 22;
+    bool nonmaxSupression = true;
 private:
     AsyncVar<bool> setZero{false};
     CameraModule* camModule;

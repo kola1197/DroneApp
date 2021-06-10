@@ -44,8 +44,12 @@ void OdometryModule::startThread()
         prctl(PR_SET_NAME,(char *)s.toStdString().c_str());
         while (threadActive.get())
         {
+            if (camModule->endOfImageStream.get()){
+                threadActive.set(false);
+            }
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
                 //std::cout<<"Got image on camModule"<<std::endl;
+
                 updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
@@ -101,8 +105,8 @@ void OdometryModule::updateCoordinatsORBLidar(){
     auto detector_ = cv::ORB::create(500);
     //auto descriptor_ = cv::ORB::create();
     auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
-    int fast_threshold = 22;
-    cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, true);
+    //int fast_threshold = 22;
+    cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, nonmaxSupression);
     fastDetector->detect(greyImage, keypoints);
 
     //detector_->detect(greyImage, keypoints);

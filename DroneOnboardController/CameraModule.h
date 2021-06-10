@@ -47,6 +47,7 @@ public:
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
     AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
 
+    AsyncVar<bool> endOfImageStream{false};
 //#ifdef __arm__                                                           //dji modules installed only on raspberry pi
 //    static int my_callback(int data_type, int data_len, char *content);
 //    static cv::Mat g_greyscale_image_left;
