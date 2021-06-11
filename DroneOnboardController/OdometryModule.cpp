@@ -103,10 +103,15 @@ void OdometryModule::updateCoordinatsORBLidar(){
     //cv::Ptr<cv::xfeatures2d::SIFT> siftDetector = cv::xfeatures2d::SIFT::create(minHessian );
 
     auto detector_ = cv::ORB::create(500);
+
+    detector_->setFastThreshold(fast_threshold);
+
+
     //auto descriptor_ = cv::ORB::create();
     auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
     //int fast_threshold = 22;
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, nonmaxSupression);
+    fastDetector->setType(cv::FastFeatureDetector::TYPE_9_16);
     fastDetector->detect(greyImage, keypoints);
 
     //detector_->detect(greyImage, keypoints);
@@ -237,8 +242,10 @@ void OdometryModule::updateCoordinatsORBLidar(){
                 distance = prevDepthFrame.get_distance(pt[0], pt[1]);
             }
             else{
-                pt[0] = (int) (InputPixelAsFloat[0] * 848/greyImage.cols);;
-                pt[1] = (int) (InputPixelAsFloat[1] * 480/greyImage.rows);
+                pt[0] = (int) (InputPixelAsFloat[0]);
+                pt[1] = (int) (InputPixelAsFloat[1]);
+                //pt[0] = (int) (InputPixelAsFloat[0] * 848/greyImage.cols);
+                //pt[1] = (int) (InputPixelAsFloat[1] * 480/greyImage.rows);
                 distance = camModule->getDist(pt[0],pt[1]);
                 //std::cout <<distance<<std::endl;
             }

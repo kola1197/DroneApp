@@ -34,6 +34,70 @@ inline bool exists (const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
 }
 
+bool profile_changed(const std::vector<rs2::stream_profile>& current, const std::vector<rs2::stream_profile>& prev)
+{
+    for (auto&& sp : prev)
+    {
+        //If previous profile is in current (maybe just added another)
+        auto itr = std::find_if(std::begin(current), std::end(current), [&sp](const rs2::stream_profile& current_sp) { return sp.unique_id() == current_sp.unique_id(); });
+        if (itr == std::end(current)) //If it previous stream wasn't found in current
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+rs2_stream find_stream_to_align(const std::vector<rs2::stream_profile>& streams)
+{
+    //Given a vector of streams, we try to find a depth stream and another stream to align depth with.
+    //We prioritize color streams to make the view look better.
+    //If color is not available, we take another stream that (other than depth)
+    rs2_stream align_to = RS2_STREAM_ANY;
+    bool depth_stream_found = false;
+    bool color_stream_found = false;
+    for (rs2::stream_profile sp : streams)
+    {
+        rs2_stream profile_stream = sp.stream_type();
+        if (profile_stream != RS2_STREAM_DEPTH)
+        {
+            if (!color_stream_found)         //Prefer color
+                align_to = profile_stream;
+
+            if (profile_stream == RS2_STREAM_COLOR)
+            {
+                color_stream_found = true;
+            }
+        }
+        else
+        {
+            depth_stream_found = true;
+        }
+    }
+
+    if(!depth_stream_found)
+        throw std::runtime_error("No Depth stream available");
+
+    if (align_to == RS2_STREAM_ANY)
+        throw std::runtime_error("No stream found to align with Depth");
+
+    return align_to;
+}
+
+float get_depth_scale(rs2::device dev)
+{
+    // Go over the device's sensors
+    for (rs2::sensor& sensor : dev.query_sensors())
+    {
+        // Check if the sensor if a depth sensor
+        if (rs2::depth_sensor dpt = sensor.as<rs2::depth_sensor>())
+        {
+            return dpt.get_depth_scale();
+        }
+    }
+    throw std::runtime_error("Device does not have a depth sensor");
+}
+
 int CameraModule::startThread() {
     int result = 0;
     std::cout << "starting thread" << std::endl;
@@ -93,11 +157,7 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
             int counter = 0;
             std::cout<<"REALSENSE"<<std::endl;
-            //namedWindow("color test", cv::WINDOW_AUTOSIZE);
-            //namedWindow("depth test", cv::WINDOW_AUTOSIZE);
-            //cv::VideoCapture leftCamera("/dev/video0");
-            //cv::VideoCapture rightCamera("/dev/video2");
-            //cv::VideoCapture rightCamera(0);
+
             rs2::config cfg;
             float ResultVector[3];
             float InputPixelAsFloat[2];
@@ -114,18 +174,40 @@ int CameraModule::startThread() {
             auto ColorStream = MyPipelineProfile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
             rs2_intrinsics lDepthIntrinsics = DepthStream.get_intrinsics();
             rs2_intrinsics lColorIntrinsics = ColorStream.get_intrinsics();
+
+            //rs2::pipeline_profile profile = pipe.start();
+            float depth_scale = get_depth_scale(MyPipelineProfile.get_device());
+            rs2_stream align_to = find_stream_to_align(MyPipelineProfile.get_streams());
+            rs2::align align(align_to);
+
             for (int i = 0; i<10; i++)//to skip first few frames when device just initiated
                 auto frames = pipe.wait_for_frames();
             while (!threadStop.get()){
-                rs2::frameset data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
-                rs2::frame color = data.get_color_frame();
-                rs2::depth_frame localDepthFrame = data.get_depth_frame();
+
+                rs2::frameset frameset = pipe.wait_for_frames(); // Wait for next set of frames from the camera
+                rs2::frame color = frameset.get_color_frame();
+
+
+                if (profile_changed(pipe.get_active_profile().get_streams(), MyPipelineProfile.get_streams()))
+                {
+                    //If the profile was changed, update the align object, and also get the new device's depth scale
+                    MyPipelineProfile = pipe.get_active_profile();
+                    align_to = find_stream_to_align(MyPipelineProfile.get_streams());
+                    align = rs2::align(align_to);
+                    depth_scale = get_depth_scale(MyPipelineProfile.get_device());
+                }
+                auto processed = align.process(frameset);
+                //rs2::depth_frame localDepthFrame = data.get_depth_frame();
+                rs2::depth_frame localDepthFrame = processed.get_depth_frame();
+
 
                 const int w = color.as<rs2::video_frame>().get_width();
                 const int h = color.as<rs2::video_frame>().get_height();
-                float distance = localDepthFrame.get_distance(320, 240);
 
-                rs2_deproject_pixel_to_point(ResultVector, &lDepthIntrinsics, InputPixelAsFloat, distance);
+
+                //float distance = localDepthFrame.get_distance(320, 240);
+
+                //rs2_deproject_pixel_to_point(ResultVector, &lDepthIntrinsics, InputPixelAsFloat, distance);
                 //std::cout <<"DEPROJECTED POINT before: "<< "x = " << ResultVector[0] << ", y = " << ResultVector[1] << ", z = " << ResultVector[2] << std::endl;
                 //std::cout<<localDepthFrame.get_data()<<std::endl;
                 rs2::frame depth = localDepthFrame.apply_filter(color_map);
@@ -221,10 +303,10 @@ int CameraModule::startThread() {
                 leftImage.setImage(out.size(), out.data);
                 std::vector<std::vector<double>> depthArray;
                 std::ifstream in(depthPath); // окрываем файл для чтения
-                double depth1[848][480];
+                double depth1[leftImage.getImage()->size().width][leftImage.getImage()->size().height];
                 if (in.is_open()) {
-                    for (int i = 0; i < 848; i++) {
-                        for (int j = 0; j < 480; j++) {
+                    for (int i = 0; i < leftImage.getImage()->size().width; i++) {
+                        for (int j = 0; j < leftImage.getImage()->size().height; j++) {
                             double d = -1;
                             in >> d;
                             depth1[i][j] = d;
@@ -251,8 +333,8 @@ int CameraModule::startThread() {
                 //fin.read(&r, sizeof (rs2_intrinsics));
                 fin.close();
                 depthMutex.lock();
-                for (int i = 0; i < 848; i++) {
-                    for (int j = 0; j < 480; j++) {
+                for (int i = 0; i < leftImage.getImage()->rows; i++) {
+                    for (int j = 0; j < leftImage.getImage()->cols; j++) {
                         depth[i][j] = depth1[i][j];
                     }
                 }
