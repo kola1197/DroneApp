@@ -45,7 +45,7 @@ public:
     rs2::depth_frame depthFrame = rs2::depth_frame(nullptr);
     //rs2::depth_frame prevDepthFrame = rs2::depth_frame(nullptr);
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
-    AsyncVar<CaptureMode> captureMode {CaptureMode::REALSENSE};
+    AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
 
     AsyncVar<bool> endOfImageStream{false};
 //#ifdef __arm__                                                           //dji modules installed only on raspberry pi
@@ -72,7 +72,7 @@ private:
     int saveCounter=0;
     MutexBool imageCaptureMode{false};
     void saveImages();
-    double depth [848][480];
+    double depth [960][540];
     std::mutex depthMutex;
     void saveDepth(const std::string& path);
 

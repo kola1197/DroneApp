@@ -68,6 +68,51 @@ void OdometryModule::startThread()
     odometryThread.detach();
 }
 
+void OdometryModule::updateCoordinats()
+{
+    std::vector<std::chrono::microseconds> timeShot;
+    std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
+    timeShot.push_back(startTime);
+
+    camModule->depthImageMutex.lock();       // get camera info
+    double depthDists[960][540];
+    cv::Mat colorImage = camModule->leftImage.getImage()->clone();
+    if (camModule->captureMode.get() == REALSENSE){
+        rs2::depth_frame depthFrame(camModule->depthFrame);
+    }
+    if (camModule->captureMode.get() == TEST_DATASET) {
+        for (int i=0;i<940;i++){
+            for (int j=0;j<560;j++){
+                depthDists[i][j] = camModule->getDist(i,j);
+            }
+        }
+    }
+    rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
+    camModule->depthImageMutex.unlock();
+
+    updateCoordinatesSURFLidar(colorImage);
+
+
+};
+
+
+void OdometryModule::updateCoordinatesSURFLidar( cv::Mat colorImage,int hessianThreshold){
+    cv::Ptr<cv::xfeatures2d::SURF> surfDetector = cv::xfeatures2d::SURF::create(hessianThreshold );
+    std::vector<cv::KeyPoint> keypoints;
+    cv::Mat descriptors;
+    surfDetector->detectAndCompute( colorImage,cv::noArray() ,keypoints, descriptors );
+
+    if (!prevKeypoints.empty()){
+        cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+        std::vector<std::vector<cv::DMatch>> knn_matches;
+        matcher->knnMatch(prevDescriptors, descriptors, knn_matches,2);
+
+
+
+    }
+
+}
+
 void OdometryModule::updateCoordinatsORBLidar(){
     std::vector<std::chrono::microseconds> timeShot;
     std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
@@ -112,9 +157,9 @@ void OdometryModule::updateCoordinatsORBLidar(){
     //int fast_threshold = 22;
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, nonmaxSupression);
     fastDetector->setType(cv::FastFeatureDetector::TYPE_9_16);
-    fastDetector->detect(greyImage, keypoints);
+    //fastDetector->detect(greyImage, keypoints);
 
-    //detector_->detect(greyImage, keypoints);
+    detector_->detect(greyImage, keypoints);
     adaptive_non_maximal_suppresion(keypoints, 500);
     detector_->compute(greyImage, keypoints, descriptors);
 
@@ -140,7 +185,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
         //matcher->knnMatch(prevDescriptors, descriptors,  knn_matches,2);
         timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot4
 
-        double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fx, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+        double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fy, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
         E = cv::Mat(3, 3, CV_64FC1, cameraM);
         std::vector<cv::Point3f> pts_3d;
         std::vector<cv::Point2f> pts_2d;
@@ -284,9 +329,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
             cv::Mat dr, dt;
             bool allOk = true;
             try {
-
-
-                cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, true, 200, 1.0, 0.99);
+                cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false, 200, 1, 0.92, cv::noArray(), cv::SOLVEPNP_ITERATIVE);
             }
             catch (cv::Exception& e){
                 allOk = false;

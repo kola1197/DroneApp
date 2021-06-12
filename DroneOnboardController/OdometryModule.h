@@ -21,8 +21,8 @@ public:
     AsyncVar<CvPoint3D32f> targetPoint{CvPoint3D32f{1,1,0}};
     void setCurrentPointAsZero();
     PX4Comannder px4Commander;
-
-    int fast_threshold = 22;
+    void updateCoordinats();
+    int fast_threshold = 31;
     bool nonmaxSupression = true;
 private:
     AsyncVar<bool> setZero{false};
@@ -57,6 +57,8 @@ private:
 
 
     void adaptive_non_maximal_suppresion(std::vector<cv::KeyPoint> &keypoints, const int num);
+
+    void updateCoordinatesSURFLidar(cv::Mat colorImage, int hessianThreshold = 20);
 };
 
 
