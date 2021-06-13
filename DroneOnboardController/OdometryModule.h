@@ -22,7 +22,7 @@ public:
     void setCurrentPointAsZero();
     PX4Comannder px4Commander;
     void updateCoordinats();
-    int fast_threshold = 31;
+    int fast_threshold = 30;
     bool nonmaxSupression = true;
 private:
     AsyncVar<bool> setZero{false};
@@ -58,7 +58,9 @@ private:
 
     void adaptive_non_maximal_suppresion(std::vector<cv::KeyPoint> &keypoints, const int num);
 
-    void updateCoordinatesSURFLidar(cv::Mat colorImage, int hessianThreshold = 20);
+    std::vector<cv::DMatch> findMatchesSURF(cv::Mat colorImage, std::vector<cv::KeyPoint>* keypoints, cv::Mat* descriptors , int hessianThreshold = 20);
+
+    std::vector<cv::DMatch> findMathesORB(cv::Mat colorImage, std::vector<cv::KeyPoint> *keypoints, cv::Mat *descriptors);
 };
 
 

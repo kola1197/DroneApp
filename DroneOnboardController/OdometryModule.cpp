@@ -49,8 +49,8 @@ void OdometryModule::startThread()
             }
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
                 //std::cout<<"Got image on camModule"<<std::endl;
-
-                updateCoordinatsORBLidar();
+                updateCoordinats();
+                //updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
                 if (px4Commander.connected.get()){
@@ -77,9 +77,8 @@ void OdometryModule::updateCoordinats()
     camModule->depthImageMutex.lock();       // get camera info
     double depthDists[960][540];
     cv::Mat colorImage = camModule->leftImage.getImage()->clone();
-    if (camModule->captureMode.get() == REALSENSE){
-        rs2::depth_frame depthFrame(camModule->depthFrame);
-    }
+    rs2::depth_frame depthFrame(camModule->depthFrame);
+
     if (camModule->captureMode.get() == TEST_DATASET) {
         for (int i=0;i<940;i++){
             for (int j=0;j<560;j++){
@@ -90,27 +89,188 @@ void OdometryModule::updateCoordinats()
     rs2_intrinsics intrinsics = camModule->DepthIntrinsics.get();
     camModule->depthImageMutex.unlock();
 
-    updateCoordinatesSURFLidar(colorImage);
-
-
-};
-
-
-void OdometryModule::updateCoordinatesSURFLidar( cv::Mat colorImage,int hessianThreshold){
-    cv::Ptr<cv::xfeatures2d::SURF> surfDetector = cv::xfeatures2d::SURF::create(hessianThreshold );
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
-    surfDetector->detectAndCompute( colorImage,cv::noArray() ,keypoints, descriptors );
+
+    //std::vector<cv::DMatch> matches = findMatchesSURF(colorImage, &keypoints, &descriptors);
+    std::vector<cv::DMatch> matches = findMathesORB(colorImage, &keypoints, &descriptors);
+
+    std::cout<<"matches count: "<<matches.size()<<std::endl;
+
+    std::vector<cv::Point3f> pts_3d;
+    std::vector<cv::Point2f> pts_2d;
+    std::vector<cv::Point2f> debugLines;
+    std::vector<cv::Point2f> secondDebugLines;
+    std::vector<cv::Point2f> thirdDebugLines;
+
+    for (cv::DMatch m : matches)
+    {
+        float ResultVector[3];
+        float InputPixelAsFloat[2] {prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y};
+        //int w = depthFrame.get_width();
+        int pt [2];
+        pt[0] = (int) (InputPixelAsFloat[0] );
+        pt[1] = (int) (InputPixelAsFloat[1] );
+
+        double distance = 0;
+        if (camModule->captureMode.get() == REALSENSE){
+            distance = prevDepthFrame.get_distance(pt[0],pt[1]);
+        }
+        if (camModule->captureMode.get() == TEST_DATASET){
+            distance = depthDists[pt[0]][pt[1]];
+        }
+
+        float mDist = sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+                           + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y));
+        //if (true){  //TODO: add treshold
+        std::vector<float> sortedDiff;
+        for (cv::DMatch m : matches) {
+            sortedDiff.push_back(sqrt((prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x) * (prevKeypoints[m.queryIdx].pt.x - keypoints[m.trainIdx].pt.x)
+                                      + (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y) * (prevKeypoints[m.queryIdx].pt.y - keypoints[m.trainIdx].pt.y)));
+        }
+        std::sort(sortedDiff.begin(),sortedDiff.end());
+        float medianDistance = 1;
+        float distanceTreshold = 3.5f;
+        if (sortedDiff.size()>1) {
+            medianDistance = sortedDiff[(int) sortedDiff.size() / 2];
+        }
+        if (/*distance<6 && */distance > 0.1){
+            if (mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold) ){
+                rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
+                pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
+                pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
+                debugLines.push_back(cv::Point2f(prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y));
+                debugLines.push_back(keypoints[m.trainIdx].pt);
+            }
+            else {
+                secondDebugLines.push_back(cv::Point2f(prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y));
+                secondDebugLines.push_back(keypoints[m.trainIdx].pt);
+            }
+        }
+        else{
+            thirdDebugLines.push_back(cv::Point2f(prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y));
+            thirdDebugLines.push_back(keypoints[m.trainIdx].pt);
+        }
+    }
+
+    timeShot.push_back(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()));     //timeshot6
+    std::cout<<"After sort: "<<pts_3d.size()<<std::endl;
+    cv::Mat imToShow = colorImage.clone();
+    for (int i=0;i<pts_3d.size();i++ ){
+        char tttt[100];
+        int fontFace = cv::FONT_HERSHEY_PLAIN;
+        double fontScale = 1;
+        int thickness = 1;
+        circle(imToShow, pts_2d[i], 1, CV_RGB(255, 0, 0), 2);
+        sprintf(tttt, "%02f, %02f, %02f", pts_3d[i].x,pts_3d[i].y,pts_3d[i].z);
+        putText(imToShow, tttt, cv::Point2d( pts_2d[i].x - 10, pts_2d[i].y - 10), fontFace, fontScale, cv::Scalar::all(255), thickness, 6);
+    }
+    for (int i = 0;i<debugLines.size();i=i+2){                                            //
+        cv::line(imToShow,debugLines[i],debugLines[i+1], CV_RGB(0, 255, 0),3);
+    }
+    for (int i = 0;i<secondDebugLines.size();i=i+2){                                      //threshold
+        cv::line(imToShow,secondDebugLines[i],secondDebugLines[i+1], CV_RGB(255, 0, 0),3);
+    }
+    for (int i = 0;i<thirdDebugLines.size();i=i+2){                                      //no depth distance
+        cv::line(imToShow,thirdDebugLines[i],thirdDebugLines[i+1], CV_RGB(255, 255, 0),3);
+    }
+
+    cv::imshow("test", imToShow);
+    cv::waitKey(1);
+
+    double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fy, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+    E = cv::Mat(3, 3, CV_64FC1, cameraM);
+
+    if (pts_3d.size()>7 && pts_2d.size()>7)
+    {
+        cv::Mat r, t;
+        cv::Mat dr, dt;
+        bool allOk = true;
+        try {
+            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false, 200, 1, 0.92, cv::noArray(), cv::SOLVEPNP_ITERATIVE);
+        }
+        catch (cv::Exception& e){
+            allOk = false;
+        }
+        if (allOk){
+            //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
+
+            cv::Mat R;
+            cv::Rodrigues(r, R);
+            if (t_f.empty() && R_f.empty()){
+                R_f = R.clone();
+                t_f = t.clone();
+            } else{
+                dt = t_f + (R_f * t);
+                dr = R * R_f;
+                if (std::abs(t_f.at<double>(0) - dt.at<double>(0)) < 2 && std::abs(t_f.at<double>(1) - dt.at<double>(1)) < 2
+                    && std::abs(t_f.at<double>(2) - dt.at<double>(2)) < 2){
+                    t_f = t_f + (R_f * t);
+                    R_f = R * R_f;
+                }
+            }
+            //std::cout << "R=" << std::endl << R << std::endl;
+            //std::cout << "t=" << std::endl << t << std::endl;
+            prevKeypoints = keypoints;
+            prevDescriptors = descriptors;
+            prevDepthFrame = depthFrame;
+            char coordinatesText[100];
+            char anglesText[100];
+            sprintf(coordinatesText, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
+                    t_f.at<double>(2));
+            sprintf(anglesText, "Angles: x = %02fm y = %02fm z = %02fm", R_f.at<double>(0), R_f.at<double>(1),
+                    R_f.at<double>(2));
+
+            std::cout << coordinatesText<< std::endl;
+            std::cout << anglesText<< std::endl;
+
+            coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
+        }
+        else {
+            framesDropped++;
+        }
+    }
+    else {
+        framesDropped++;
+    }
+    framesCounter ++;
+    std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
+
+
+    if (prevKeypoints.empty()){
+        prevKeypoints = keypoints;
+        prevDescriptors = descriptors;
+        prevDepthFrame = depthFrame;
+    }
+    std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    timeShot.push_back(endTime);
+    //calculateTime(timeShot);
+}
+
+
+std::vector<cv::DMatch> OdometryModule::findMatchesSURF(cv::Mat colorImage, std::vector<cv::KeyPoint>* keypoints, cv::Mat* descriptors , int hessianThreshold){
+    cv::Ptr<cv::xfeatures2d::SURF> surfDetector = cv::xfeatures2d::SURF::create(500 );
+    //std::vector<cv::KeyPoint> keypoints;
+    //cv::Mat descriptors;
+    surfDetector->detectAndCompute( colorImage,cv::noArray() ,*keypoints, *descriptors );
+    std::vector<cv::DMatch> goodMatches;
 
     if (!prevKeypoints.empty()){
         cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
         std::vector<std::vector<cv::DMatch>> knn_matches;
-        matcher->knnMatch(prevDescriptors, descriptors, knn_matches,2);
+        matcher->knnMatch(prevDescriptors, *descriptors, knn_matches,2);
 
-
-
+        const float ratio_thresh = 0.7f;
+        for (size_t i = 0; i < knn_matches.size(); i++)
+        {
+            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+            {
+                goodMatches.push_back(knn_matches[i][0]);
+            }
+        }
+        std::cout<<"matches count: "<<knn_matches.size()<< " good matches count: "<<goodMatches.size()<<std::endl;
     }
-
+    return goodMatches;
 }
 
 void OdometryModule::updateCoordinatsORBLidar(){
@@ -910,4 +1070,43 @@ void OdometryModule::featureDetection(cv::Mat img_1, std::vector<cv::Point2f>& p
 void OdometryModule::setCurrentPointAsZero()
 {
     setZero.set(true);
+}
+
+std::vector<cv::DMatch> OdometryModule::findMathesORB(cv::Mat colorImage, std::vector<cv::KeyPoint> *keypoints, cv::Mat *descriptors) {
+
+    cv::Mat greyImage;
+    cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
+
+    cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, nonmaxSupression);
+    auto detector_ = cv::ORB::create(500);
+    //fastDetector->setType(cv::FastFeatureDetector::TYPE_9_16);
+    auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
+    detector_->setFastThreshold(fast_threshold);
+    detector_->setMaxFeatures(500);
+    //fastDetector->detect(greyImage, *keypoints);
+
+    detector_->detect(greyImage, *keypoints);
+    adaptive_non_maximal_suppresion(*keypoints, 500);
+    detector_->compute(greyImage, *keypoints, *descriptors);
+
+    std::vector<cv::DMatch> goodMatches;
+
+    if (!prevKeypoints.empty()){
+        std::vector<cv::DMatch> prettyGoodMatches;
+        matcher_crosscheck_->match(prevDescriptors, *descriptors, prettyGoodMatches);
+
+        auto min_max = minmax_element(prettyGoodMatches.begin(), prettyGoodMatches.end());
+        auto min_element = min_max.first;
+        const float ratio_thresh = 0.7f;
+        double frame_gap = 1;
+        for (int i = 0; i < prettyGoodMatches.size(); i++)
+        {
+            if (prettyGoodMatches.at(i).distance <= std::max(3.0 * min_element->distance, 30.0 * frame_gap))
+            {
+                goodMatches.push_back(prettyGoodMatches.at(i));
+            }
+        }
+        std::cout<<"matches count: "<<prettyGoodMatches.size()<< " good matches count: "<<goodMatches.size()<<std::endl;
+    }
+    return goodMatches;
 }

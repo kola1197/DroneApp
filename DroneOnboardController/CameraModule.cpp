@@ -281,7 +281,7 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
         int counter = 0;
         std::cout<<"DATASET"<<std::endl;
-        std::string path = "/home/nickolay/My_Dataset/07";
+        std::string path = "/home/nickolay/My_Dataset/06";
         std::string imageFolderPath = path + "/0/";
         std::string depthFolderPath = path + "/3/";
         std::string intristicFolderPath = path + "/4/";
