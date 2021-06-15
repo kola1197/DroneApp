@@ -49,8 +49,8 @@ void OdometryModule::startThread()
             }
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
                 //std::cout<<"Got image on camModule"<<std::endl;
-                //updateCoordinats();
-                updateCoordinatsORBLidar();
+                updateCoordinats();
+                //updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
                 if (px4Commander.connected.get()){
@@ -134,9 +134,9 @@ void OdometryModule::updateCoordinats()
         if (sortedDiff.size()>1) {
             medianDistance = sortedDiff[(int) sortedDiff.size() / 2];
         }
-        if (/*distance<6 && */distance > 0.1){
+        if (distance<16 && distance > 0.1){
             if (mDist <= (distanceTreshold * medianDistance) && mDist >= ( medianDistance / distanceTreshold) ){
-                rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, distance);
+                rs2_deproject_pixel_to_point(ResultVector, &intrinsics, InputPixelAsFloat, (float)distance);
                 pts_3d.push_back(cv::Point3f(ResultVector[0],ResultVector[1],ResultVector[2]));
                 pts_2d.push_back(keypoints[m.trainIdx].pt);          // Add the 2D point of the feature position of the second image
                 debugLines.push_back(cv::Point2f(prevKeypoints[m.queryIdx].pt.x,prevKeypoints[m.queryIdx].pt.y));
@@ -180,6 +180,7 @@ void OdometryModule::updateCoordinats()
         drawMatches(prevImage, prevKeypoints, colorImage, keypoints, matches, mmatches, cv::Scalar::all(-1),
                     cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
         cv::imshow("test", mmatches);
+
         cv::waitKey(1);
 
     }
@@ -192,12 +193,13 @@ void OdometryModule::updateCoordinats()
 
     if (pts_3d.size()>7 && pts_2d.size()>7)
     {
-        cv::Mat r, t;
+        cv::Mat rr, tt;
         cv::Mat dr, dt;
         bool allOk = true;
         try {
             //cv::solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false, cv::SOLVEPNP_ITERATIVE);
-            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false, 200, 1, 0.92, cv::noArray(), cv::SOLVEPNP_EPNP);
+            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), rr, tt, false, 50, 2.0, 0.92, cv::noArray(), cv::SOLVEPNP_EPNP);
+            //cv::solvePnPGeneric(pts_3d, pts_2d, E, cv::Mat(), rr, tt, false);
         }
         catch (cv::Exception& e){
             allOk = false;
@@ -205,18 +207,19 @@ void OdometryModule::updateCoordinats()
         if (allOk){
             //solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false);
 
-            cv::Mat R;
-            cv::Rodrigues(r, R);
+            cv::Mat RR;
+            cv::Rodrigues(rr, RR);
+            RR = RR.t();
             if (t_f.empty() && R_f.empty()){
-                R_f = R.clone();
-                t_f = t.clone();
+                R_f = RR.clone();
+                t_f = tt.clone();
             } else{
-                dt = t_f + (R_f * t);
-                dr = R * R_f;
+                dt = t_f + (R_f * tt);
+                dr = RR * R_f;
                 if (std::abs(t_f.at<double>(0) - dt.at<double>(0)) < 2 && std::abs(t_f.at<double>(1) - dt.at<double>(1)) < 2
                     && std::abs(t_f.at<double>(2) - dt.at<double>(2)) < 2){
-                    t_f = t_f + (R_f * t);
-                    R_f = R * R_f;
+                    t_f = t_f + (R_f * tt);
+                    R_f = RR * R_f;
                 }
             }
             //std::cout << "R=" << std::endl << R << std::endl;
@@ -227,12 +230,14 @@ void OdometryModule::updateCoordinats()
             prevDepthFrame = depthFrame;
             char coordinatesText[100];
             char anglesText[100];
+
+
             sprintf(coordinatesText, "Coordinates: x = %02fm y = %02fm z = %02fm", t_f.at<double>(0), t_f.at<double>(1),
                     t_f.at<double>(2));
-            sprintf(anglesText, "Angles: x = %02fm y = %02fm z = %02fm", R_f.at<double>(0), R_f.at<double>(1),
+            sprintf(anglesText, "Angles: x = %02f deg y = %02f deg z = %02f deg", R_f.at<double>(0), R_f.at<double>(1),
                     R_f.at<double>(2));
 
-            std::cout << coordinatesText<< std::endl;
+            std::cout << "Frame "<< framesCounter  <<"  " << coordinatesText<< std::endl;
             std::cout << anglesText<< std::endl;
 
             coordinates.set(cvPoint3D32f(t_f.at<double>(0), t_f.at<double>(1), t_f.at<double>(2)));
@@ -511,6 +516,7 @@ void OdometryModule::updateCoordinatsORBLidar(){
 
                 cv::Mat R;
                 cv::Rodrigues(r, R);
+                R = R.t();
                 if (t_f.empty() && R_f.empty()){
                     R_f = R.clone();
                     t_f = t.clone();

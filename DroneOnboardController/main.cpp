@@ -26,7 +26,7 @@ void odometryParametrsTest(){
 
     fout.precision(dbl::max_digits10);
     fout.open("Odometry_test.txt",std::ios_base::out);
-    for (int i=31;i<32;i++) {
+    for (int i=23;i<24;i++) {
         std::cout<<" fast_threshold: "<<i<<" nonmaxSupression: true"<<std::endl;
         StatsServer server;
         std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
