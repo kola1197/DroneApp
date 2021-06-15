@@ -231,7 +231,8 @@ int CameraModule::startThread() {
 
                 rightPrevImage.setImage(rightImage.getImage()->size(), rightImage.getImage()->data);
                 rightImage.setImage(depthImage.size(), depthImage.data);
-                DepthIntrinsics.set(lColorIntrinsics);
+                DepthIntrinsics.set(lDepthIntrinsics);
+                ColorIntrinsics.set(lColorIntrinsics);
                 //depthFrame.set(localDepthFrame);
                 depthImageMutex.lock();
                 //prevDepthFrame = depthFrame;
@@ -343,7 +344,7 @@ int CameraModule::startThread() {
                 frameNum.set(counter);
                 imageForOdometryModuleUpdated.set(true);
                 counter++;
-                usleep(33000);
+                usleep(63000);
             }
         }
         });

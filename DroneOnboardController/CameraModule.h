@@ -45,6 +45,7 @@ public:
     rs2::depth_frame depthFrame = rs2::depth_frame(nullptr);
     //rs2::depth_frame prevDepthFrame = rs2::depth_frame(nullptr);
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
+    AsyncVar<rs2_intrinsics> ColorIntrinsics;
     AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
 
     AsyncVar<bool> endOfImageStream{false};

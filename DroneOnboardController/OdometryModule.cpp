@@ -49,8 +49,8 @@ void OdometryModule::startThread()
             }
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
                 //std::cout<<"Got image on camModule"<<std::endl;
-                updateCoordinats();
-                //updateCoordinatsORBLidar();
+                //updateCoordinats();
+                updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
                 if (px4Commander.connected.get()){
@@ -175,10 +175,19 @@ void OdometryModule::updateCoordinats()
         cv::line(imToShow,thirdDebugLines[i],thirdDebugLines[i+1], CV_RGB(255, 255, 0),3);
     }
 
-    cv::imshow("test", imToShow);
-    cv::waitKey(1);
+    if (matches.size()>0 && !prevImage.empty()) {
+        cv::Mat mmatches;
+        drawMatches(prevImage, prevKeypoints, colorImage, keypoints, matches, mmatches, cv::Scalar::all(-1),
+                    cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+        cv::imshow("test", mmatches);
+        cv::waitKey(1);
 
-    double cameraM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fy, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+    }
+    //cv::imshow("test", imToShow);
+
+    double cameraMM[3][3] = {{camModule->DepthIntrinsics.get().fx, 0.000000, camModule->DepthIntrinsics.get().ppx}, {0.000000, camModule->DepthIntrinsics.get().fy, camModule->DepthIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+    //double cameraM[3][3] = {{camModule->ColorIntrinsics.get().fx, 0.000000, camModule->ColorIntrinsics.get().ppx}, {0.000000, camModule->ColorIntrinsics.get().fy, camModule->ColorIntrinsics.get().ppy}, {0, 0, 1}}; //camera matrix to be edited
+    double cameraM[3][3] = {{684.65875244140625,0,481.625},{0,685.1435546875,279.17776489257812},{0,0,1}};
     E = cv::Mat(3, 3, CV_64FC1, cameraM);
 
     if (pts_3d.size()>7 && pts_2d.size()>7)
@@ -187,7 +196,8 @@ void OdometryModule::updateCoordinats()
         cv::Mat dr, dt;
         bool allOk = true;
         try {
-            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false, 200, 1, 0.92, cv::noArray(), cv::SOLVEPNP_ITERATIVE);
+            //cv::solvePnP(pts_3d, pts_2d, E, cv::Mat(), r, t, false, cv::SOLVEPNP_ITERATIVE);
+            cv::solvePnPRansac(pts_3d, pts_2d, E, cv::Mat(), r, t, false, 200, 1, 0.92, cv::noArray(), cv::SOLVEPNP_EPNP);
         }
         catch (cv::Exception& e){
             allOk = false;
@@ -211,6 +221,7 @@ void OdometryModule::updateCoordinats()
             }
             //std::cout << "R=" << std::endl << R << std::endl;
             //std::cout << "t=" << std::endl << t << std::endl;
+            prevImage = colorImage.clone();
             prevKeypoints = keypoints;
             prevDescriptors = descriptors;
             prevDepthFrame = depthFrame;
@@ -238,6 +249,7 @@ void OdometryModule::updateCoordinats()
 
 
     if (prevKeypoints.empty()){
+        prevImage = colorImage.clone();
         prevKeypoints = keypoints;
         prevDescriptors = descriptors;
         prevDepthFrame = depthFrame;
@@ -805,7 +817,7 @@ void OdometryModule::updateCoordinatsLidar()
         framesCounter ++;
         std::cout<<framesDropped<< " frames dropped ( "<<100*framesDropped/framesCounter<<"% )"<<std::endl;
     }
-
+    prevImage = colorImage.clone();
     prevKeypoints = keypoints;
     prevDescriptors = descriptors;
     prevDepthFrame = depthFrame;
@@ -1078,17 +1090,19 @@ std::vector<cv::DMatch> OdometryModule::findMathesORB(cv::Mat colorImage, std::v
     cv::cvtColor(colorImage, greyImage, cv::COLOR_RGB2GRAY);
 
     cv::Ptr<cv::FastFeatureDetector> fastDetector = cv::FastFeatureDetector::create(fast_threshold, nonmaxSupression);
-    auto detector_ = cv::ORB::create(500);
+    auto detector_ = cv::ORB::create(10000);
+    auto descriptor = cv::xfeatures2d::BEBLID::create(0.75);
     //fastDetector->setType(cv::FastFeatureDetector::TYPE_9_16);
     auto matcher_crosscheck_ = cv::BFMatcher::create(cv::NORM_HAMMING, true);
+
     detector_->setFastThreshold(fast_threshold);
-    detector_->setMaxFeatures(500);
-    //fastDetector->detect(greyImage, *keypoints);
+    //detector_->setMaxFeatures(500);
+    fastDetector->detect(greyImage, *keypoints);
 
-    detector_->detect(greyImage, *keypoints);
-    adaptive_non_maximal_suppresion(*keypoints, 500);
+    //detector_->detect(greyImage, *keypoints);
+    //adaptive_non_maximal_suppresion(*keypoints, 500);
     detector_->compute(greyImage, *keypoints, *descriptors);
-
+    //descriptor->compute(greyImage,*keypoints,*descriptors);
     std::vector<cv::DMatch> goodMatches;
 
     if (!prevKeypoints.empty()){
