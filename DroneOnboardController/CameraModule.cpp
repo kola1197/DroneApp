@@ -257,26 +257,44 @@ int CameraModule::startThread() {
                     rightBoardImage.setImage(frame.size(), frame.data);
                 }
                 depthImageMutex.unlock();
-                if (imageCaptureMode.get()!= datasetSaveMode){
-                    datasetSaveMode = imageCaptureMode.get();
-                    if (imageCaptureMode.get()){
-                        dataset = Dataset();
+                bool newDatasetMode = true;
+                if (newDatasetMode) {
+                    if (imageCaptureMode.get() != datasetSaveMode) {
+                        datasetSaveMode = imageCaptureMode.get();
+                        if (imageCaptureMode.get()) {
+                            dataset = Dataset();
+                        } else {
+                            getDirectoryToSave();
+                            dataset.saveDataset(dirToSave);
+                        }
                     }
-                    else{
-                        getDirectoryToSave();
-                        dataset.saveDataset(dirToSave);
+                    if (imageCaptureMode.get()) {
+                        std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                                std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
+                        writeDataToDataset();
+                        std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                                std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
+                        double deltaTime = (endTime - startTime).count();
+                        double fps = 1000000 / deltaTime;
+                        std::cout << "Writing dataset to RAM " << deltaTime << " ms. fps: " << fps << std::endl;
                     }
-                    //saveImages();
+                }
+                else{
+
+                    std::chrono::microseconds startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch());       // timeShot[0]
+                    saveImages();
+                    std::chrono::microseconds endTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch());
+                    double deltaTime = (endTime - startTime).count();
+                    double fps = 1000000 / deltaTime;
+                    std::cout << "Writing dataset to ssd " << deltaTime << " ms. fps: " << fps << std::endl;
                 }
 
-
-                if (imageCaptureMode.get()) {
-                    writeDataToDataset();
-                }
                 gotImage.set(true);
                 frameNum.set(counter);
                 imageForOdometryModuleUpdated.set(true);
-                usleep(33000);
+                //usleep(33000);
                 counter++;
             }
         });
