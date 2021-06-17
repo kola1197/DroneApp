@@ -257,21 +257,21 @@ int CameraModule::startThread() {
                     rightBoardImage.setImage(frame.size(), frame.data);
                 }
                 depthImageMutex.unlock();
-                if (imageCaptureMode.get()){
-                    /*char buffer[PATH_MAX];
-                    getcwd(buffer, sizeof(buffer));
-                    std::string protoPath("./" + dirToSave+"/0/"+std::to_string(counter)+".jpg");
-                    std::string path("");
-                    for (int i=0;i<protoPath.size();i++)
-                    {
-                        if (protoPath[i] != ' ' && protoPath[i]!='\n')
-                        path.push_back(protoPath[i]);
+                if (imageCaptureMode.get()!= datasetSaveMode){
+                    datasetSaveMode = imageCaptureMode.get();
+                    if (imageCaptureMode.get()){
+                        dataset = Dataset();
                     }
-                    ///home/nickolay/Code/DroneApp/cmake-build-debug/DroneOnboardController/SatFeb2718:57:352021/0
-                    std::cout<<path<<std::endl;
-                    cv::imwrite(path,colorImageA);*/
-                    saveImages();
-                    //cv::imwrite(std::string(buffer) + dirToSave+"/0/"+std::to_string(counter)+".bmp",colorImageA);
+                    else{
+                        getDirectoryToSave();
+                        dataset.saveDataset(dirToSave);
+                    }
+                    //saveImages();
+                }
+
+
+                if (imageCaptureMode.get()) {
+                    writeDataToDataset();
                 }
                 gotImage.set(true);
                 frameNum.set(counter);
@@ -498,6 +498,23 @@ void CameraModule::saveImages() {
     saveCounter++;
 }
 
+void CameraModule::writeDataToDataset() {
+    dataset.forwardCamImages.push_back(leftImage.getImage()->clone());
+    dataset.depthImages.push_back(rightImage.getImage()->clone());
+    dataset.rightBoardImages.push_back(rightBoardImage.getImage()->clone());
+    dataset.depthIntristics = DepthIntrinsics.get();
+    std::vector<std::vector<double>> d;
+    for (int i=0;i<960;i++){
+        std::vector<double> dd;
+        for (int j=0;j<540;j++){
+            double d = depthFrame.get_distance(i,j);
+            dd.push_back(d);
+        }
+        d.push_back(dd);
+    }
+    dataset.depthValues.push_back(d);
+}
+
 void CameraModule::saveIntristics(std::string path){
     std::ofstream fout;
     fout.open(path,std::ios_base::out);
@@ -535,3 +552,4 @@ bool CameraModule::active() {
     bool result = !threadStop.get();
     return result;
 }
+

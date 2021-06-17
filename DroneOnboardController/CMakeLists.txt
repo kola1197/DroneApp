@@ -70,7 +70,7 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
         StoppableThread.cpp
         StoppableThread.h
         joystickinput.h
-        joystickinput.cpp)
+        joystickinput.cpp Dataset.cpp Dataset.h)
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${realsense2_LIBRARY} pthread )
     #find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
@@ -127,7 +127,7 @@ ELSE()
         StoppableThread.h
         joystickinput.h
         joystickinput.cpp
-    )
+            Dataset.cpp Dataset.h)
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${realsense2_LIBRARY} pthread )
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()

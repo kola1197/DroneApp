@@ -11,6 +11,7 @@
 #include "DroneImage.h"
 #include "../Utils/MutexBool.h"
 #include "../Utils/AsyncVar.h"
+#include "Dataset.h"
 //#ifdef __arm__
 //#include "DJI_guidance.h"
 //#include "DJI_utility.h"
@@ -61,7 +62,7 @@ public:
 //    //const int IMAGE_SIZE = 76800;
 //#endif
 private:
-
+    bool datasetSaveMode = false;
     MutexBool threadStop{false};
 //#ifdef __arm__
 //    int testMode = 0;      //1 - read images from video0/1 , 2 - from storage, 0 - dji system
@@ -76,8 +77,9 @@ private:
     double depth [960][540];
     std::mutex depthMutex;
     void saveDepth(const std::string& path);
-
+    Dataset dataset;
     void saveIntristics(std::string path);
+    void writeDataToDataset();
 };
 
 
