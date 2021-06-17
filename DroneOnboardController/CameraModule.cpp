@@ -157,7 +157,12 @@ int CameraModule::startThread() {
         std::thread thr([this]() {
             int counter = 0;
             std::cout<<"REALSENSE"<<std::endl;
-
+            cv::VideoCapture cap(2 ); // open the video camera no. 10
+            if (cap.isOpened()) {
+                #define RIGHT_CAMERA_EXISTS
+                cap.set(cv::CAP_PROP_FRAME_WIDTH, 1240);
+                cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+            }
             rs2::config cfg;
             float ResultVector[3];
             float InputPixelAsFloat[2];
@@ -242,15 +247,10 @@ int CameraModule::startThread() {
                 //}
 
 
-                cv::VideoCapture cap(0 ); // open the video camera no. 10
-
-
-
-
                 if (cap.isOpened()) {
-                    #define RIGHT_CAMERA_EXISTS
-                    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1240);
-                    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+                    //#define RIGHT_CAMERA_EXISTS
+                    //cap.set(cv::CAP_PROP_FRAME_WIDTH, 1240);
+                    //cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
                     cv::Mat frame;
                     bool bSuccess = cap.read(frame);
 
