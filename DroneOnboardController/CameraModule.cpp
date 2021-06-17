@@ -242,7 +242,11 @@ int CameraModule::startThread() {
                 //}
 
 
-                cv::VideoCapture cap(8); // open the video camera no. 0
+                cv::VideoCapture cap(0 ); // open the video camera no. 10
+
+
+
+
                 if (cap.isOpened()) {
                     #define RIGHT_CAMERA_EXISTS
                     cap.set(cv::CAP_PROP_FRAME_WIDTH, 1240);

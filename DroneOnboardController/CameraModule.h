@@ -46,7 +46,7 @@ public:
     //rs2::depth_frame prevDepthFrame = rs2::depth_frame(nullptr);
     AsyncVar<rs2_intrinsics> DepthIntrinsics;
     AsyncVar<rs2_intrinsics> ColorIntrinsics;
-    AsyncVar<CaptureMode> captureMode {CaptureMode::TEST_DATASET};
+    AsyncVar<CaptureMode> captureMode {CaptureMode::REALSENSE};
 
     AsyncVar<bool> endOfImageStream{false};
 //#ifdef __arm__                                                           //dji modules installed only on raspberry pi

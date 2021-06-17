@@ -83,8 +83,8 @@ void odometryParametrsTest(){
 
 int main(int argc, char *argv[]) {
     //calibDM(argc, argv);
-    odometryParametrsTest();
-    //StatsServer server;
-    //server.startServer();
+    //odometryParametrsTest();
+    StatsServer server;
+    server.startServer();
     return 0;
 }

@@ -49,7 +49,7 @@ void OdometryModule::startThread()
             }
             if (camModule->gotImage.get() && camModule->imageForOdometryModuleUpdated.get()){
                 //std::cout<<"Got image on camModule"<<std::endl;
-                updateCoordinats();
+                //updateCoordinats();
                 //updateCoordinatsORBLidar();
                 camModule->imageForOdometryModuleUpdated.set(false);
                 frameNum = camModule->frameNum.get();
