@@ -23,7 +23,7 @@ public:
     rs2_intrinsics depthIntristics;
 
     void saveDepth(const std::string &path, int num);
-
+    void clear();
     void saveIntristics(std::string path);
 };
 

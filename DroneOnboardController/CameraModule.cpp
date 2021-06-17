@@ -266,6 +266,8 @@ int CameraModule::startThread() {
                         } else {
                             getDirectoryToSave();
                             dataset.saveDataset(dirToSave);
+                            dataset.clear();
+                            dataset = Dataset();
                         }
                     }
                     if (imageCaptureMode.get()) {

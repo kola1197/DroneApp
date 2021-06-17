@@ -103,3 +103,10 @@ void Dataset::saveIntristics(std::string path){
     rs2_intrinsics r = depthIntristics;
     fout.write(reinterpret_cast<char*>(&r), sizeof(r));
 }
+
+void Dataset::clear() {
+    forwardCamImages.clear();
+    rightBoardImages.clear();
+    depthValues.clear();
+    depthImages.clear();
+}
