@@ -400,7 +400,11 @@ void MainWindow::updatePX4Data()
     QString CPUText = "";
     CPUText += "CPU temp: " + QString::number(client.vehicleData.cpuTemp.get())+"            AVG Load: "+QString::number(client.vehicleData.cpuAVGLoad.get())+"\n";
     for (int i = 0; i<client.vehicleData.cpuCoreLoad.size(); i++){
-        CPUText+= QString::number(i+1)+"] "+QString::number(client.vehicleData.cpuCoreLoad[i]) + "     ";
+        QString value = QString::number(client.vehicleData.cpuCoreLoad[i]);
+        CPUText+= QString::number(i+1)+"] "+value+"     ";
+        for (int j=0;j<3-value.length();j++){
+            CPUText+=" ";
+        }
         if ( i % 4 == 3){
             CPUText+= "\n";
         }
