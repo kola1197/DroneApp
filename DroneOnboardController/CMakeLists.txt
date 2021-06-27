@@ -20,6 +20,7 @@ set(CMAKE_AUTORCC ON)
 
 #TARGET_LINK_LIBRARIES( ${execName})
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DARM")
     message("-- ARM architecture detected")
     option(USE_OPENCV "Should compile with OpenCV" YES)
@@ -70,7 +71,12 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
         StoppableThread.cpp
         StoppableThread.h
         joystickinput.h
-        joystickinput.cpp Dataset.cpp Dataset.h)
+        joystickinput.cpp
+        Dataset.cpp
+        Dataset.h
+        CpuInfo.cpp
+        CpuInfo.h
+    )
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${realsense2_LIBRARY} pthread )
     #find_library(Guidance_Lib DJI_guidance HINTS $(SOURCE_DIR)/..)
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} ${Guidance_Lib} usb-1.0 pthread)
@@ -127,7 +133,11 @@ ELSE()
         StoppableThread.h
         joystickinput.h
         joystickinput.cpp
-            Dataset.cpp Dataset.h)
+        Dataset.cpp
+        Dataset.h
+        CpuInfo.cpp
+        CpuInfo.h
+    )
     target_link_libraries(DroneOnboardController PRIVATE Qt5::Widgets ${OpenCV_LIBS} ${realsense2_LIBRARY} pthread )
     #target_link_libraries(DroneOnboardController ${OpenCV_LIBS} pthread)
 ENDIF()

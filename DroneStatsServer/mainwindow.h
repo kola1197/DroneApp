@@ -28,6 +28,8 @@ public slots:
     void setConnected(bool connected);                   //on server tcp connection on/off changes
     void setPing(QString q);
     void updateImages();
+    void setRamData(double ramSize, double ramFree);
+    void setCPUData(double CPUTemp, double avgLoad, QVector<double> coreLoad);
 private slots:
     void on_connectButton_released();
     void on_getImageStreamButton_pressed();

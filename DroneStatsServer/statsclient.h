@@ -77,6 +77,8 @@ signals:
     void transmitTargetpointUpdated();
     void transmitVehicleModeValue();
     void transmitUpdatePX4Data();
+    void transmitRamData(double ramSize, double ramFree);
+    void transmitCPUData(double CPUTemp, double avgLoad, QVector<double> coreLoad);
 private slots:
     void sendPingRequest();
 private:
@@ -90,6 +92,8 @@ private:
     void errorServerStop();
     //void sendMessage(PingMessage m);
     double fps = 0;
+    double ram_total = 0;
+    double ram_free = 0;
 
     void getMessage();
 

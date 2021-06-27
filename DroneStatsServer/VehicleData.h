@@ -8,6 +8,7 @@
 
 
 #include <opencv2/core/core_c.h>
+#include <QString>
 #include "../Utils/AsyncVar.h"
 enum VehicleMode{QUADROCOPTER = 0, CAR = 1};
 
@@ -17,6 +18,13 @@ public:
     AsyncVar<VehicleMode> vehicleMode{QUADROCOPTER};
     AsyncVar<bool> connectedToPx;
     AsyncVar<int> connectionCounter{0};
+    AsyncVar<double> ramTotal{0};
+    AsyncVar<double> ramFree{0};
+    AsyncVar<double> fps{0};
+    AsyncVar<QString> ping{""};
+    AsyncVar<double> cpuTemp{0};
+    AsyncVar<double> cpuAVGLoad{0};
+    std::vector<double> cpuCoreLoad;
 };
 
 

@@ -256,6 +256,7 @@ void StatsClient::getSystemMessage()
     std::memcpy(&m,msg , sizeof(m));
     QString string ("");
     bool b;
+    QVector<double> cpuLoad;
     switch (m.type)
     {
         case SystemMessage::TEXT_ALLERT:
@@ -273,6 +274,20 @@ void StatsClient::getSystemMessage()
             break;
         case SystemMessage::FPS_COUNTER:
             fps = m.i[0];
+            break;
+        case SystemMessage::RAM_DATA:
+            ram_total = m.i[0];
+            ram_free = m.i[1];
+            ram_total/=1024;
+            ram_free/=1024;
+            transmitRamData(ram_total, ram_free);
+            break;
+        case SystemMessage::CPU_DATA:
+            cpuLoad.clear();
+            for (int i=0;i<m.f[1];i++){
+                cpuLoad.push_back(m.i[i]);
+            }
+            transmitCPUData(m.f[2], m.f[0], cpuLoad);
             break;
         case SystemMessage::COORDINATES:
             //CvPoint3D32f point(m.f[0],m.f[1],m.f[2]);

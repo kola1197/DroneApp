@@ -12,10 +12,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     qRegisterMetaType<CvPoint3D32f>("CvPoint3D32f");             //now we can use this messages in signal/slot system as QObjects
+    //qRegisterMetaType<CvPoint3D32f>("std::vector<double>");
     connect(&client,SIGNAL(transmit_to_gui(QString)),this,SLOT(setWarningText(QString)));
     connect(&client,SIGNAL(transmit_to_left_image(QImage)),this,SLOT(setLeftImage(QImage)));
     connect(&client,SIGNAL(transmit_to_right_image(QImage)),this,SLOT(setRightImage(QImage)));
     connect(&client,SIGNAL(transmitOnboardVideoCaptureStatus(bool)),this,SLOT(setOnboardVideoCaptureMode(bool)));
+    connect(&client, SIGNAL(transmitRamData(double, double)), this,SLOT(setRamData(double, double)) );
+    connect(&client, SIGNAL(transmitCPUData(double, double,QVector<double>)), this,SLOT(setCPUData(double, double, QVector<double>)));
     connect(&client,SIGNAL(transmitVideoStreamStatus(bool)),this,SLOT(setVideoStreamMode(bool)));
     connect(&client,SIGNAL(transmitConnectionStatus(bool)),this,SLOT(setConnected(bool)));
     connect(&client,SIGNAL(transmitPing(QString)),this,SLOT(setPing(QString)));
@@ -80,9 +83,10 @@ void MainWindow::getCoordinatespoint(CvPoint3D32f point) {
 
 void MainWindow::setPing(QString q)
 {
-
     //QString q = "to Raspberry: " + QString::number(to) + "\n" + "from Raspberry: " + QString::number(from);
-    ui->infoLabelRPI->setText(q);
+    //ui->infoLabelRPI->setText(q);
+    client.vehicleData.ping.set(q);
+    updatePX4Data();
 }
 
 void MainWindow::on_connectButton_released()
@@ -116,6 +120,12 @@ void MainWindow::setConnected(bool b)
     //ui->setTargetPointButton->setEnabled(b);
     ui->SetCurrentPointAsZerroButton->setEnabled(b);
     //ui->startFlightButton->setEnabled(b);      //after px  connection
+}
+
+void MainWindow::setRamData(double ramSize, double ramFree) {
+    client.vehicleData.ramTotal.set(ramSize);
+    client.vehicleData.ramFree.set(ramFree);
+    updatePX4Data();
 }
 
 void MainWindow::setRightImage(QImage value)
@@ -194,6 +204,16 @@ void MainWindow::setVideoStreamMode(bool mode)
         ui->getImageStreamButton->setText("Turn on video");
     }
 
+}
+
+void MainWindow::setCPUData(double CPUTemp, double avgLoad, QVector<double> coreLoad) {
+    client.vehicleData.cpuTemp.set(CPUTemp);
+    client.vehicleData.cpuAVGLoad.set(avgLoad);
+    client.vehicleData.cpuCoreLoad.clear();
+    for (int i=0; i<coreLoad.size(); i++){
+        client.vehicleData.cpuCoreLoad.push_back(coreLoad[i]);
+    }
+    updatePX4Data();
 }
 
 void MainWindow::onnnTargetXEditingFinished()
@@ -372,4 +392,18 @@ void MainWindow::updatePX4Data()
     text += client.vehicleData.connectedToPx.get()? "Connected" : "NOT Connected to PX4\n";
     text += client.vehicleData.connectionCounter.get()>2 && !client.vehicleData.connectedToPx.get() ?  "Trying to connect "+QString::number(client.vehicleData.connectionCounter.get())+" seconds remain\n" : "\n";
     ui->PXInfoLabel->setText(text);
+    QString raspberryText = "";
+    raspberryText += client.vehicleData.ping.get()+"\n";
+    //std::cout<<client.vehicleData.ramTotal.get()<<"   "<<client.vehicleData.ramFree.get()<<std::endl;
+    raspberryText += "Ram Usage: " + QString::number(client.vehicleData.ramTotal.get() - client.vehicleData.ramFree.get())+"/"+QString::number(client.vehicleData.ramTotal.get());
+    ui->infoLabelRPI->setText(raspberryText);
+    QString CPUText = "";
+    CPUText += "CPU temp: " + QString::number(client.vehicleData.cpuTemp.get())+"            AVG Load: "+QString::number(client.vehicleData.cpuAVGLoad.get())+"\n";
+    for (int i = 0; i<client.vehicleData.cpuCoreLoad.size(); i++){
+        CPUText+= QString::number(i+1)+"] "+QString::number(client.vehicleData.cpuCoreLoad[i]) + "     ";
+        if ( i % 4 == 3){
+            CPUText+= "\n";
+        }
+    }
+    ui->CPULabel->setText(CPUText);
 }

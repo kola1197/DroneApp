@@ -100,6 +100,7 @@ private:
 
     void UpConnectionToPX4();
 
+    void ramTest(unsigned long &memSize, unsigned long &memFree);
 };
 
 

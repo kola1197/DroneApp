@@ -81,9 +81,42 @@ void odometryParametrsTest(){
     fout.close();
 }
 
+void ramTest()
+{
+    unsigned long memSize = 0;
+    unsigned long memFree = 0;
+    std::string token;
+    std::ifstream file("/proc/meminfo");
+    int counter = 0;
+    while(file >> token) {
+        if(token == "MemTotal:") {
+            unsigned long mem;
+            if(file >> mem) {
+                memSize = mem;
+            }
+            counter++;
+        }
+        if(token == "MemAvailable:") {
+            unsigned long mem;
+            if(file >> mem) {
+                memFree = mem;
+            }
+            counter++;
+        }
+        // ignore rest of the line
+        if (counter==2) {
+            file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+    }
+    std::cout<<"MemSize: "<<memSize<<" MemFree: "<<memFree<<std::endl;
+}
+
 int main(int argc, char *argv[]) {
     //calibDM(argc, argv);
     //odometryParametrsTest();
+
+    //ramTest();
+
     StatsServer server;
     server.startServer();
     return 0;

@@ -12,6 +12,7 @@
 #include <thread>
 #include "opencv2/core.hpp"
 #include "OdometryModule.h"
+#include "CpuInfo.h"
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc.hpp>
@@ -176,6 +177,36 @@ std::vector<double> StatsServer::odometryTest(int fast_threshold, bool nonmaxSup
     return result;
 }
 
+void StatsServer::ramTest(unsigned long &memSize, unsigned long &memFree)
+{
+    memSize = 0;
+    memFree = 0;
+    std::string token;
+    std::ifstream file("/proc/meminfo");
+    int counter = 0;
+    while(file >> token) {
+        if(token == "MemTotal:") {
+            unsigned long mem;
+            if(file >> mem) {
+                memSize = mem;
+            }
+            counter++;
+        }
+        if(token == "MemAvailable:") {
+            unsigned long mem;
+            if(file >> mem) {
+                memFree = mem;
+            }
+            counter++;
+        }
+        // ignore rest of the line
+        if (counter==2) {
+            file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+    }
+    std::cout<<"MemSize: "<<memSize<<" MemFree: "<<memFree<<std::endl;
+}
+
 void StatsServer::updateDataForGroundStation()
 {
     std::chrono::microseconds timeNow = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
@@ -192,6 +223,29 @@ void StatsServer::updateDataForGroundStation()
         s.type = SystemMessage::FPS_COUNTER;
         s.i[0] = (int) odometryModule->fps;
         sendMessage(s);
+
+
+        unsigned long memSize = 0;
+        unsigned long memFree = 0;
+        ramTest(memSize, memFree);
+        SystemMessage ramData{};
+        ramData.type = SystemMessage::RAM_DATA;
+        ramData.i[0] = (int) (memSize/1024);
+        ramData.i[1] = (int) (memFree/1024);
+        sendMessage(ramData);
+
+        SystemMessage cpuData{};
+        cpuData.type = SystemMessage::CPU_DATA;
+        std::vector<float> cpuUsage = CpuInfo::getCPULoad();
+        int coresCount = cpuUsage.size()-1;
+        cpuData.f[0] = cpuUsage[0];
+        cpuData.f[1] = coresCount;
+        cpuData.f[2] = CpuInfo::getCPUTemp();
+        for (int i = 1; i<cpuUsage.size(); i++){
+            cpuData.i[i-1] = cpuUsage[i];
+        }
+        sendMessage(cpuData);
+
         lastDataUpdateForGroundStation = timeNow;
     }
 }
