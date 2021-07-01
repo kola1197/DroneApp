@@ -161,7 +161,8 @@ int CameraModule::startThread() {
             prctl(PR_SET_NAME,(char *)s.c_str());
             int counter = 0;
             std::cout<<"REALSENSE"<<std::endl;
-            cv::VideoCapture cap(2 ); // open the video camera no. 10
+            //cv::VideoCapture cap(0); // open the video camera no. 10
+            cv::VideoCapture cap("/dev/rcam", cv::CAP_V4L);
             if (cap.isOpened()) {
                 #define RIGHT_CAMERA_EXISTS
                 cap.set(cv::CAP_PROP_FRAME_WIDTH, 1240);
@@ -257,7 +258,7 @@ int CameraModule::startThread() {
                     //cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
                     cv::Mat frame;
                     bool bSuccess = cap.read(frame);
-
+                    //rightImage.setImage(frame.size(), frame.data);
                     rightBoardImage.setImage(frame.size(), frame.data);
                 }
                 depthImageMutex.unlock();
@@ -513,8 +514,9 @@ void CameraModule::saveImages() {
 
     cv::imwrite(path0, *leftImage.getImage());
     cv::imwrite(path1, *rightImage.getImage());
-#ifdef RIGHT_CAMERA_EXISTS
     cv::imwrite(path2, *rightBoardImage.getImage());
+
+#ifdef RIGHT_CAMERA_EXISTS
 #endif
     saveDepth(path3);
     if (saveCounter==0){

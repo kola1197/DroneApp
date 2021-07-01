@@ -70,8 +70,9 @@ void Dataset::saveDataset(std::string dirToSave) {
 
         cv::imwrite(path0, forwardCamImages[i]);
         cv::imwrite(path1, depthImages[i]);
+        cv::imwrite(path2, rightBoardImages[i]);
+
 #ifdef RIGHT_CAMERA_EXISTS
-        cv::imwrite(path2, *rightBoardImage.getImage());
 #endif
         saveDepth(path3, saveCounter);
         if (saveCounter==0){
