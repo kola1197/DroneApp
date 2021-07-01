@@ -102,7 +102,7 @@ void StatsServer::startServer(){
         std::cout<<"reading messages"<<std::endl;
         while (!serverStop.get()) {
             getMessage();
-            //usleep(1000);
+            usleep(1000);
         }
     });
     thr.detach();
@@ -110,11 +110,11 @@ void StatsServer::startServer(){
     res = camModule.startThread();
     if (res == 0) {
         odometryModule = new OdometryModule(&camModule);
-        //odometryModule->startThread();
+        odometryModule->startThread();
         UpdateSettingsForGroundStation();
         while (!stopThread()) {
             updateDataForGroundStation();
-            //usleep(1000);
+            usleep(1000);
         }
     }
     else{
