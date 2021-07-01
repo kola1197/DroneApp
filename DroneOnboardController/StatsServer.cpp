@@ -19,6 +19,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <fcntl.h>
 #include <fstream>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -95,19 +97,24 @@ void StatsServer::startServer(){
     //sendAllert("testtesttest");
     std::thread thr([this]()
     {
+        QString s = "GetMessage";
+        prctl(PR_SET_NAME,(char *)s.toStdString().c_str());
         std::cout<<"reading messages"<<std::endl;
         while (!serverStop.get()) {
             getMessage();
+            //usleep(1000);
         }
     });
     thr.detach();
-    int res = camModule.startThread();
+    int res = 0;
+    res = camModule.startThread();
     if (res == 0) {
         odometryModule = new OdometryModule(&camModule);
-        odometryModule->startThread();
+        //odometryModule->startThread();
         UpdateSettingsForGroundStation();
         while (!stopThread()) {
             updateDataForGroundStation();
+            //usleep(1000);
         }
     }
     else{
@@ -177,7 +184,7 @@ std::vector<double> StatsServer::odometryTest(int fast_threshold, bool nonmaxSup
     return result;
 }
 
-void StatsServer::ramTest(unsigned long &memSize, unsigned long &memFree)
+void StatsServer::ramUsageCheck(unsigned long &memSize, unsigned long &memFree)
 {
     memSize = 0;
     memFree = 0;
@@ -227,7 +234,7 @@ void StatsServer::updateDataForGroundStation()
 
         unsigned long memSize = 0;
         unsigned long memFree = 0;
-        ramTest(memSize, memFree);
+        ramUsageCheck(memSize, memFree);
         SystemMessage ramData{};
         ramData.type = SystemMessage::RAM_DATA;
         ramData.i[0] = (int) (memSize/1024);
@@ -557,6 +564,8 @@ void StatsServer::UpdateSettingsForGroundStation()
 
 void StatsServer::UpConnectionToPX4(){
     std::thread thr([this]() {
+        std::string s = "ConnectToPX";
+        prctl(PR_SET_NAME,(char *)s.c_str());
         odometryModule->px4Commander.startDronekit();
         std::cout<<"dronekit started"<<std::endl;
         int connectionCounter = 40;

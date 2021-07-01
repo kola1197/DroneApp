@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     //calibDM(argc, argv);
     //odometryParametrsTest();
 
-    //ramTest();
+    //ramUsageCheck();
 
     StatsServer server;
     server.startServer();

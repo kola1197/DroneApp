@@ -1,6 +1,8 @@
 #include <thread>
 #include <zconf.h>
 #include <QMessageBox>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "iostream"
@@ -30,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     std::thread thr([this]()
                     {
+                        std::string s = "GroundStationTHR";
+                        prctl(PR_SET_NAME,(char *)s.c_str());
                         int cnt = 1;
                         while (cnt > 0) {
                             if (!client.closeConnectionThreadBool.get()) {

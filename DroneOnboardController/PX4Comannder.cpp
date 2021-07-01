@@ -9,6 +9,8 @@
 #include <thread>
 #include <pthread.h>
 #include <wait.h>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 #include "MAVConnector.h"
 
 PX4Comannder::PX4Comannder(){}
@@ -16,6 +18,8 @@ PX4Comannder::PX4Comannder(){}
 void PX4Comannder::startDronekit()
 {
     std::thread thr([this]() {
+        std::string s = "StartPX";
+        prctl(PR_SET_NAME,(char *)s.c_str());
     pid_t child_pid;
 
     /* Duplicate this process.  */

@@ -29,6 +29,8 @@
 
 #include <unistd.h>
 #include <fstream>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 
 inline bool exists (const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
@@ -155,6 +157,8 @@ int CameraModule::startThread() {
     }*/
     if (captureMode.get() == CaptureMode::REALSENSE) {                                                                   //TODO: add check of video0/video2 exist
         std::thread thr([this]() {
+            std::string s = "CM_Realsencz";
+            prctl(PR_SET_NAME,(char *)s.c_str());
             int counter = 0;
             std::cout<<"REALSENSE"<<std::endl;
             cv::VideoCapture cap(2 ); // open the video camera no. 10
@@ -304,6 +308,8 @@ int CameraModule::startThread() {
     }
     if (captureMode.get() == CaptureMode::TEST_DATASET) {
         std::thread thr([this]() {
+            std::string s = "CM_TestDataset";
+            prctl(PR_SET_NAME,(char *)s.c_str());
         int counter = 0;
         std::cout<<"DATASET"<<std::endl;
         std::string path = "/home/nickolay/My_Dataset/06";

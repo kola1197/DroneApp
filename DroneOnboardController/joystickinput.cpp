@@ -14,6 +14,8 @@
 #include <fstream>
 #include <mutex>
 #include <qtimer.h>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 
 //JOYSTICKs PART
 
@@ -88,6 +90,8 @@ void JoyStickInput::start()
 {
     std::thread th([&]()
                    {
+                       std::string s = "JoyStickTHR";
+                       prctl(PR_SET_NAME,(char *)s.c_str());
                        run();
                    });
     th.detach();
